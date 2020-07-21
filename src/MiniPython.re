@@ -132,7 +132,15 @@ let step = (c: config): option(config) =>
   /* zipper rules */
   /* zipper skip - op_expr */
   | {zipper: {focus: Exp(OpExpr({op, args: []})), ctxts}, env, store, glob} =>
-    failwith("TODO")
+    Some({
+      zipper: {
+        focus: PreVal(OpPreval({op, values: []})),
+        ctxts,
+      },
+      env,
+      store,
+      glob,
+    })
   /* zipper begin - op_expr */
   | {zipper: {focus: Exp(OpExpr({op, args: [a, ...args]})), ctxts}, env, store, glob} =>
     Some({
@@ -169,7 +177,7 @@ let step = (c: config): option(config) =>
     } =>
     Some({
       zipper: {
-        focus: PreVal(OpPreval({op, values: List.rev(values)})), /* we reverse the values, since they were pushed in reverse order */
+        focus: PreVal(OpPreval({op, values: List.rev([v, ...values])})), /* we reverse the values, since they were pushed in reverse order */
         ctxts,
       },
       env,
