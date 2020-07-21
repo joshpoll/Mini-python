@@ -278,6 +278,41 @@ let step = (c: config): option(config) =>
       store,
       glob,
     })
+  /* NEGATE */
+  | {
+      zipper: {focus: PreVal(PVUnary({unary_op: Neg, operand: VInt(i1)})), ctxts},
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      zipper: {
+        focus: Value(VInt(- i1)),
+        ctxts,
+      },
+      env,
+      store,
+      glob,
+    })
+  /* ARITH: + */
+  | {
+      zipper: {
+        focus: PreVal(PVBinary({left: VInt(i1), binary_op: Add, right: VInt(i2)})),
+        ctxts,
+      },
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      zipper: {
+        focus: Value(VInt(i1 + i2)),
+        ctxts,
+      },
+      env,
+      store,
+      glob,
+    })
   | _ => None
   };
 
