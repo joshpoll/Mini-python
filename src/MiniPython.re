@@ -155,9 +155,85 @@ type config = {
 
 let step = (c: config): option(config) =>
   switch (c) {
-  /* zipper begin */
-  /* zipper continue */
-  /* zipper end */
+  /* zipper rules */
+  /* zipper begin - unary */
+  | {zipper: {focus: Exp(UnaryExpr({unary_op, operand})), ctxts}, env, store, glob} =>
+    Some({
+      zipper: {
+        focus: Exp(operand),
+        ctxts: [CUnary({unary_op, operand: ()}), ...ctxts],
+      },
+      env,
+      store,
+      glob,
+    })
+  /* zipper end - unary */
+  | {
+      zipper: {focus: Value(v), ctxts: [CUnary({unary_op, operand: ()}), ...ctxts]},
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      zipper: {
+        focus: PreVal(PVUnary({unary_op, operand: v})),
+        ctxts,
+      },
+      env,
+      store,
+      glob,
+    })
+  /* zipper begin - binary */
+  | {zipper: {focus: Exp(BinaryExpr({left, binary_op, right})), ctxts}, env, store, glob} =>
+    Some({
+      zipper: {
+        focus: Exp(left),
+        ctxts: [CBinary(BCtxtLeft({left: (), binary_op, right})), ...ctxts],
+      },
+      env,
+      store,
+      glob,
+    })
+  /* zipper continue - binary */
+  | {
+      zipper: {
+        focus: Value(v),
+        ctxts: [CBinary(BCtxtLeft({left: (), binary_op, right})), ...ctxts],
+      },
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      zipper: {
+        focus: Exp(right),
+        ctxts: [CBinary(BCtxtRight({left: v, binary_op, right: ()})), ...ctxts],
+      },
+      env,
+      store,
+      glob,
+    })
+  /* zipper end - binary */
+  | {
+      zipper: {
+        focus: Value(v),
+        ctxts: [CBinary(BCtxtRight({left, binary_op, right: ()})), ...ctxts],
+      },
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      zipper: {
+        focus: PreVal(PVBinary({left, binary_op, right: v})),
+        ctxts,
+      },
+      env,
+      store,
+      glob,
+    })
+
+  /* ChocoPy rules */
   /* NONE */
   | {zipper: {focus: Exp(NoneLiteral), ctxts}, env, store, glob} =>
     Some({
