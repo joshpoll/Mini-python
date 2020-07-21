@@ -63,6 +63,9 @@ type glob = env;
 
   */
 
+type unary_op =
+  | Neg;
+
 type binary_op =
   | Add;
 
@@ -71,12 +74,24 @@ type exp =
   | BooleanLiteral(bool)
   | IntegerLiteral(int)
   | StringLiteral(string)
+  | UnaryExpr(unary_expr)
   | BinaryExpr(binary_expr)
+
+and unary_expr = {
+  unary_op,
+  operand: exp,
+}
 
 and binary_expr = {
   left: exp,
   binary_op,
   right: exp,
+};
+
+/* ctxts */
+type unary_ctxt = {
+  unary_op,
+  operand: unit,
 };
 
 type binary_ctxt_left = {
@@ -95,6 +110,16 @@ type binary_ctxt =
   | BCtxtLeft(binary_ctxt_left)
   | BCtxtRight(binary_ctxt_right);
 
+type ctxt =
+  | CUnary(unary_ctxt)
+  | CBinary(binary_ctxt);
+
+/* preval */
+type unary_preval = {
+  unary_op,
+  operand: value,
+};
+
 type binary_preval = {
   left: value,
   binary_op,
@@ -102,6 +127,7 @@ type binary_preval = {
 };
 
 type preval =
+  | PVUnary(unary_preval)
   | PVBinary(binary_preval);
 
 /* exp -> val */
@@ -110,10 +136,10 @@ type preval =
 
 type focus =
   | Exp(exp)
-  | Value(value)
-  | PreVal(preval);
+  | PreVal(preval)
+  | Value(value);
 
-type ctxts = list(unit /* TODO */);
+type ctxts = list(ctxt);
 
 type zipper = {
   focus,
