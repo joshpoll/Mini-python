@@ -2,7 +2,17 @@ open Sidewinder;
 open Bobcat;
 open MiniPython;
 
-let vizExp = (e: exp) =>
+let vizUnaryOp = (uo: unary_op) =>
+  switch (uo) {
+  | Neg => Some(ConfigIR.mk(~name="Neg", ~nodes=[], ~render=_ => Theia.str("-"), ()))
+  };
+
+let vizBinaryOp = (bo: binary_op) =>
+  switch (bo) {
+  | Add => Some(ConfigIR.mk(~name="Add", ~nodes=[], ~render=_ => Theia.str("+"), ()))
+  };
+
+let rec vizExp = (e: exp) =>
   switch (e) {
   | NoneLiteral =>
     Some(ConfigIR.mk(~name="NoneLiteral", ~nodes=[], ~render=_ => Theia.str("NoneLiteral"), ()))
@@ -21,7 +31,45 @@ let vizExp = (e: exp) =>
     )
   | StringLiteral(string) =>
     Some(ConfigIR.mk(~name="StringLiteral", ~nodes=[], ~render=_ => Theia.str(string), ()))
-  };
+  | UnaryExpr(unary_expr) =>
+    Some(
+      ConfigIR.mk(
+        ~name="UnaryExpr",
+        ~nodes=[vizUnaryExpr(unary_expr)],
+        ~render=([ue]) => Theia.noOp(ue, []),
+        (),
+      ),
+    )
+  | BinaryExpr(binary_expr) =>
+    Some(
+      ConfigIR.mk(
+        ~name="BinaryExpr",
+        ~nodes=[vizBinaryExpr(binary_expr)],
+        ~render=([be]) => Theia.noOp(be, []),
+        (),
+      ),
+    )
+  }
+
+and vizUnaryExpr = ({unary_op, operand}: unary_expr) =>
+  Some(
+    ConfigIR.mk(
+      ~name="unary_expr",
+      ~nodes=[vizUnaryOp(unary_op), vizExp(operand)],
+      ~render=Theia.hSeq,
+      (),
+    ),
+  )
+
+and vizBinaryExpr = ({left, binary_op, right}: binary_expr) =>
+  Some(
+    ConfigIR.mk(
+      ~name="unary_expr",
+      ~nodes=[vizExp(left), vizBinaryOp(binary_op), vizExp(right)],
+      ~render=Theia.hSeq,
+      (),
+    ),
+  );
 
 let vizValue = (v: value) =>
   switch (v) {
@@ -50,6 +98,48 @@ let vizValue = (v: value) =>
     )
   };
 
+let vizUnaryPreval = ({unary_op, operand}: unary_preval) =>
+  Some(
+    ConfigIR.mk(
+      ~name="unary_preval",
+      ~nodes=[vizUnaryOp(unary_op), vizValue(operand)],
+      ~render=Theia.hSeq,
+      (),
+    ),
+  );
+
+let vizBinaryPreval = ({left, binary_op, right}: binary_preval) =>
+  Some(
+    ConfigIR.mk(
+      ~name="binary_preval",
+      ~nodes=[vizValue(left), vizBinaryOp(binary_op), vizValue(right)],
+      ~render=Theia.hSeq,
+      (),
+    ),
+  );
+
+let vizPreVal = (pv: preval) =>
+  switch (pv) {
+  | PVUnary(up) =>
+    Some(
+      ConfigIR.mk(
+        ~name="PVUnary",
+        ~nodes=[vizUnaryPreval(up)],
+        ~render=([up]) => Theia.noOp(up, []),
+        (),
+      ),
+    )
+  | PVBinary(bp) =>
+    Some(
+      ConfigIR.mk(
+        ~name="PVBinary",
+        ~nodes=[vizBinaryPreval(bp)],
+        ~render=([bp]) => Theia.noOp(bp, []),
+        (),
+      ),
+    )
+  };
+
 let vizFocus = (f: focus) =>
   switch (f) {
   | Exp(e) =>
@@ -58,6 +148,15 @@ let vizFocus = (f: focus) =>
         ~name="focus_exp",
         ~nodes=[vizExp(e)],
         ~render=([e]) => Theia.noOp(e, []),
+        (),
+      ),
+    )
+  | PreVal(pv) =>
+    Some(
+      ConfigIR.mk(
+        ~name="focus_preval",
+        ~nodes=[vizPreVal(pv)],
+        ~render=([pv]) => Theia.noOp(pv, []),
         (),
       ),
     )

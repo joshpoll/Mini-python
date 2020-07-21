@@ -88,3 +88,19 @@ ReactDOMRe.render(
   <VizTrace program={MiniPython.StringLiteral("Hello")} />,
   makeContainer("StringLiteral"),
 );
+
+/* NEG */
+ReactDOMRe.render(
+  <VizTrace program={MiniPython.UnaryExpr({unary_op: Neg, operand: IntegerLiteral(1)})} />,
+  makeContainer("NEG"),
+);
+
+/* ARITH: + */
+ReactDOMRe.render(
+  <VizTrace
+    program={
+      MiniPython.BinaryExpr({left: IntegerLiteral(1), binary_op: Add, right: IntegerLiteral(2)})
+    }
+  />,
+  makeContainer("ARITH: +"),
+);
