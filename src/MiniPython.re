@@ -69,66 +69,40 @@ type unary_op =
 type binary_op =
   | Add;
 
+type op =
+  | Unary(unary_op)
+  | Binary(binary_op);
+
 type exp =
   | NoneLiteral
   | BooleanLiteral(bool)
   | IntegerLiteral(int)
   | StringLiteral(string)
-  | UnaryExpr(unary_expr)
-  | BinaryExpr(binary_expr)
+  | OpExpr(op_expr)
 
-and unary_expr = {
-  unary_op,
-  operand: exp,
-}
-
-and binary_expr = {
-  left: exp,
-  binary_op,
-  right: exp,
+and op_expr = {
+  op,
+  args: list(exp),
 };
 
 /* ctxts */
-type unary_ctxt = {
-  unary_op,
-  operand: unit,
+type op_ctxt = {
+  op,
+  args: list(exp),
+  values: list(value),
 };
-
-type binary_ctxt_left = {
-  left: unit,
-  binary_op,
-  right: exp,
-};
-type binary_ctxt_right = {
-  left: value,
-  binary_op,
-  right: unit,
-};
-/* {focus: IntLiteral(6), ctxts: [{left: Int(5), binary_op: Add, right: ()}]} */
-
-type binary_ctxt =
-  | BCtxtLeft(binary_ctxt_left)
-  | BCtxtRight(binary_ctxt_right);
 
 type ctxt =
-  | CUnary(unary_ctxt)
-  | CBinary(binary_ctxt);
+  | OpCtxt(op_ctxt);
 
 /* preval */
-type unary_preval = {
-  unary_op,
-  operand: value,
-};
-
-type binary_preval = {
-  left: value,
-  binary_op,
-  right: value,
+type op_preval = {
+  op,
+  values: list(value),
 };
 
 type preval =
-  | PVUnary(unary_preval)
-  | PVBinary(binary_preval);
+  | OpPreval(op_preval);
 
 /* exp -> val */
 /* None -> VNone*/
@@ -156,76 +130,46 @@ type config = {
 let step = (c: config): option(config) =>
   switch (c) {
   /* zipper rules */
-  /* zipper begin - unary */
-  | {zipper: {focus: Exp(UnaryExpr({unary_op, operand})), ctxts}, env, store, glob} =>
+  /* zipper skip - op_expr */
+  | {zipper: {focus: Exp(OpExpr({op, args: []})), ctxts}, env, store, glob} =>
+    failwith("TODO")
+  /* zipper begin - op_expr */
+  | {zipper: {focus: Exp(OpExpr({op, args: [a, ...args]})), ctxts}, env, store, glob} =>
     Some({
       zipper: {
-        focus: Exp(operand),
-        ctxts: [CUnary({unary_op, operand: ()}), ...ctxts],
+        focus: Exp(a),
+        ctxts: [OpCtxt({op, args, values: []}), ...ctxts],
       },
       env,
       store,
       glob,
     })
-  /* zipper end - unary */
+  /* zipper continue - op_expr */
   | {
-      zipper: {focus: Value(v), ctxts: [CUnary({unary_op, operand: ()}), ...ctxts]},
+      zipper: {focus: Value(v), ctxts: [OpCtxt({op, args: [a, ...args], values}), ...ctxts]},
       env,
       store,
       glob,
     } =>
     Some({
       zipper: {
-        focus: PreVal(PVUnary({unary_op, operand: v})),
-        ctxts,
+        focus: Exp(a),
+        ctxts: [OpCtxt({op, args, values: [v, ...values]}), ...ctxts],
       },
       env,
       store,
       glob,
     })
-  /* zipper begin - binary */
-  | {zipper: {focus: Exp(BinaryExpr({left, binary_op, right})), ctxts}, env, store, glob} =>
-    Some({
-      zipper: {
-        focus: Exp(left),
-        ctxts: [CBinary(BCtxtLeft({left: (), binary_op, right})), ...ctxts],
-      },
-      env,
-      store,
-      glob,
-    })
-  /* zipper continue - binary */
+  /* zipper end - op_expr */
   | {
-      zipper: {
-        focus: Value(v),
-        ctxts: [CBinary(BCtxtLeft({left: (), binary_op, right})), ...ctxts],
-      },
+      zipper: {focus: Value(v), ctxts: [OpCtxt({op, args: [], values}), ...ctxts]},
       env,
       store,
       glob,
     } =>
     Some({
       zipper: {
-        focus: Exp(right),
-        ctxts: [CBinary(BCtxtRight({left: v, binary_op, right: ()})), ...ctxts],
-      },
-      env,
-      store,
-      glob,
-    })
-  /* zipper end - binary */
-  | {
-      zipper: {
-        focus: Value(v),
-        ctxts: [CBinary(BCtxtRight({left, binary_op, right: ()})), ...ctxts],
-      },
-      env,
-      store,
-      glob,
-    } =>
-    Some({
-      zipper: {
-        focus: PreVal(PVBinary({left, binary_op, right: v})),
+        focus: PreVal(OpPreval({op, values: List.rev(values)})), /* we reverse the values, since they were pushed in reverse order */
         ctxts,
       },
       env,
@@ -280,7 +224,7 @@ let step = (c: config): option(config) =>
     })
   /* NEGATE */
   | {
-      zipper: {focus: PreVal(PVUnary({unary_op: Neg, operand: VInt(i1)})), ctxts},
+      zipper: {focus: PreVal(OpPreval({op: Unary(Neg), values: [VInt(i1)]})), ctxts},
       env,
       store,
       glob,
@@ -296,10 +240,7 @@ let step = (c: config): option(config) =>
     })
   /* ARITH: + */
   | {
-      zipper: {
-        focus: PreVal(PVBinary({left: VInt(i1), binary_op: Add, right: VInt(i2)})),
-        ctxts,
-      },
+      zipper: {focus: PreVal(OpPreval({op: Binary(Add), values: [VInt(i1), VInt(i2)]})), ctxts},
       env,
       store,
       glob,
