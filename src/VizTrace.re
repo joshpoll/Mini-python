@@ -34,11 +34,11 @@ let toggle = (Animation.{curr: _, next}) =>
 
 let transform = n =>
   n
-  |> ZEDTransform.transformZExp
-  |> ZEDTransform.transformZCtxt
-  |> ZEDTransform.transformZPreval
-  |> ZEDTransform.transformZipper
-  |> ZEDTransform.transformContinuation;
+  |> MiniPythonTransform.transformOpExpr
+  // |> ZEDTransform.transformZCtxt
+  |> MiniPythonTransform.transformOpPreval;
+// |> ZEDTransform.transformZipper
+// |> ZEDTransform.transformContinuation;
 
 [@react.component]
 let make = (~continuity=true, ~padding=10., ~program) => {
@@ -216,7 +216,8 @@ let make = (~continuity=true, ~padding=10., ~program) => {
     |> List.map(MiniPythonViz.vizConfig)
     |> List.map(Sidewinder.ToConfigGraph.lower)
     |> List.map(Sidewinder.PropagatePlace.convert(Sidewinder.Flow.none))
-    |> List.map(((_, n)) => n) /* |> List.map(transform) */;
+    |> List.map(((_, n)) => n)
+    |> List.map(transform);
   /* let cap = 15;
      let nodes = nodes->Belt.List.take(cap + 1)->Belt.Option.getExn;
      let flows = flows->Belt.List.take(cap)->Belt.Option.getExn; */
