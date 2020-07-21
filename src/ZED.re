@@ -94,8 +94,8 @@ let rec lookup = (x: vid, env: env): option(value) =>
   };
 
 /* type option(config) =
-| None
-| Some(config); */
+   | None
+   | Some(config); */
 
 let step = (c: config): option(config) =>
   switch (c) {

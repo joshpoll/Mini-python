@@ -63,41 +63,28 @@ let makeContainer = text => {
 // );
 
 /* ENONE */
-ReactDOMRe.render(
-  <VizTrace
-    program={MiniPython.NoneLiteral}
-  />,
-  makeContainer("NoneLiteral"),
-);
+ReactDOMRe.render(<VizTrace program=MiniPython.NoneLiteral />, makeContainer("NoneLiteral"));
 
 /* BOOL-FALSE */
 ReactDOMRe.render(
-  <VizTrace
-    program={MiniPython.BooleanLiteral(false)}
-  />,
+  <VizTrace program={MiniPython.BooleanLiteral(false)} />,
   makeContainer("False"),
 );
 
- /* BOOL-TRUE */
+/* BOOL-TRUE */
 ReactDOMRe.render(
-  <VizTrace
-    program={MiniPython.BooleanLiteral(true)}
-  />,
+  <VizTrace program={MiniPython.BooleanLiteral(true)} />,
   makeContainer("True"),
 );
 
 /* INT */
- ReactDOMRe.render(
-   <VizTrace
-     program={MiniPython.IntegerLiteral(5)}
-   />,
-   makeContainer("IntegerLiteral"),
+ReactDOMRe.render(
+  <VizTrace program={MiniPython.IntegerLiteral(5)} />,
+  makeContainer("IntegerLiteral"),
 );
 
 /* STR */
- ReactDOMRe.render(
-   <VizTrace
-     program={MiniPython.StringLiteral("Hello")}
-   />,
-   makeContainer("StringLiteral"),
+ReactDOMRe.render(
+  <VizTrace program={MiniPython.StringLiteral("Hello")} />,
+  makeContainer("StringLiteral"),
 );

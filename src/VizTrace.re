@@ -177,113 +177,112 @@ let make = (~continuity=true, ~padding=10., ~program) => {
   //     </svg>
   //   </div>;
   // } else {
-    let nodes = MiniPython.interpretTrace(program);
+  let nodes = MiniPython.interpretTrace(program);
 
-    let (state, dispatch) = React.useReducer(reducer, initialState);
-    let (Animation.{curr, next}, setAnimationState) = React.useState(() => Animation.initValue);
+  let (state, dispatch) = React.useReducer(reducer, initialState);
+  let (Animation.{curr, next}, setAnimationState) = React.useState(() => Animation.initValue);
 
-    // Notice that instead of `useEffect`, we have `useEffect0`. See
-    // reasonml.github.io/reason-react/docs/en/components#hooks for more info
-    React.useEffect0(() => {
-      dispatch(Length(List.length(nodes)));
+  // Notice that instead of `useEffect`, we have `useEffect0`. See
+  // reasonml.github.io/reason-react/docs/en/components#hooks for more info
+  React.useEffect0(() => {
+    dispatch(Length(List.length(nodes)));
 
-      // Returning None, instead of Some(() => ...), means we don't have any
-      // cleanup to do before unmounting. That's not 100% true. We should
-      // technically cancel the promise. Unofortunately, there's currently no
-      // way to cancel a promise. Promises in general should be way less used
-      // for React components; but since folks do use them, we provide such an
-      // example here. In reality, this fetch should just be a plain callback,
-      // with a cancellation API
-      None;
-    });
+    // Returning None, instead of Some(() => ...), means we don't have any
+    // cleanup to do before unmounting. That's not 100% true. We should
+    // technically cancel the promise. Unofortunately, there's currently no
+    // way to cancel a promise. Promises in general should be way less used
+    // for React components; but since folks do use them, we provide such an
+    // example here. In reality, this fetch should just be a plain callback,
+    // with a cancellation API
+    None;
+  });
 
-    /* let swTrace =
-       trace
-       |> List.map((((rule, flow), c)) => {
-            let (flow, n) = ZEDViz.vizState(rule, c) |> Sidewinder.Config.propagatePlace(flow);
-            (
-              flow,
-              n
-              |> ZEDTransform.transformOp
-              |> ZEDTransform.transformZipper
-              |> ZEDTransform.transformContinuation,
-            );
-          })
-       |> List.split
-       |> (((flows, ns)) => Sidewinder.Config.compile(flows, ns)); */
-    let nodes: list(Sidewinder.ConfigGraphIR.node) =
-      nodes
-      |> List.map(MiniPythonViz.vizConfig)
-      |> List.map(Sidewinder.ToConfigGraph.lower)
-      |> List.map(Sidewinder.PropagatePlace.convert(Sidewinder.Flow.none))
-      |> List.map(((_, n)) => n)
-      /* |> List.map(transform) */;
-    /* let cap = 15;
-       let nodes = nodes->Belt.List.take(cap + 1)->Belt.Option.getExn;
-       let flows = flows->Belt.List.take(cap)->Belt.Option.getExn; */
-    // Js.log2("nodes", nodes |> Array.of_list);
-    // Js.log2("sifted", flowSiftedNodes |> Array.of_list);
-    let finalNode = nodes |> List.rev |> List.hd;
-    let finalState =
-      Sidewinder.Config.compileTransition(finalNode, Sidewinder.Flow.none, finalNode);
-    let animatedNodes =
-      Bobcat.Fn.mapPairs(
-        (n1, n2) => Sidewinder.Config.compileTransition(n1, Sidewinder.Flow.none, n2),
-        nodes,
-      )
-      @ [finalState];
-    /*  let flowNodePairs =
-          trace |> List.map((((rule, flow), n)) => (flow, ZEDViz.vizState(rule, n)));
-        let transitionViz = Sidewinder.Fn.mapPairs(((f1, n1), (f2, n2)) => {}, flowNodePairs); */
-    let renderedConfig = List.nth(animatedNodes, state.pos);
-    let width = 1000.;
-    let height = 300.;
-    let xOffset = 0.;
-    let yOffset = 100.;
-    /* let width = renderedConfig.bbox->Sidewinder.Rectangle.width;
-       let height = renderedConfig.bbox->Sidewinder.Rectangle.height; */
+  /* let swTrace =
+     trace
+     |> List.map((((rule, flow), c)) => {
+          let (flow, n) = ZEDViz.vizState(rule, c) |> Sidewinder.Config.propagatePlace(flow);
+          (
+            flow,
+            n
+            |> ZEDTransform.transformOp
+            |> ZEDTransform.transformZipper
+            |> ZEDTransform.transformContinuation,
+          );
+        })
+     |> List.split
+     |> (((flows, ns)) => Sidewinder.Config.compile(flows, ns)); */
+  let nodes: list(Sidewinder.ConfigGraphIR.node) =
+    nodes
+    |> List.map(MiniPythonViz.vizConfig)
+    |> List.map(Sidewinder.ToConfigGraph.lower)
+    |> List.map(Sidewinder.PropagatePlace.convert(Sidewinder.Flow.none))
+    |> List.map(((_, n)) => n) /* |> List.map(transform) */;
+  /* let cap = 15;
+     let nodes = nodes->Belt.List.take(cap + 1)->Belt.Option.getExn;
+     let flows = flows->Belt.List.take(cap)->Belt.Option.getExn; */
+  // Js.log2("nodes", nodes |> Array.of_list);
+  // Js.log2("sifted", flowSiftedNodes |> Array.of_list);
+  let finalNode = nodes |> List.rev |> List.hd;
+  let finalState =
+    Sidewinder.Config.compileTransition(finalNode, Sidewinder.Flow.none, finalNode);
+  let animatedNodes =
+    Bobcat.Fn.mapPairs(
+      (n1, n2) => Sidewinder.Config.compileTransition(n1, Sidewinder.Flow.none, n2),
+      nodes,
+    )
+    @ [finalState];
+  /*  let flowNodePairs =
+        trace |> List.map((((rule, flow), n)) => (flow, ZEDViz.vizState(rule, n)));
+      let transitionViz = Sidewinder.Fn.mapPairs(((f1, n1), (f2, n2)) => {}, flowNodePairs); */
+  let renderedConfig = List.nth(animatedNodes, state.pos);
+  let width = 1000.;
+  let height = 300.;
+  let xOffset = 0.;
+  let yOffset = 100.;
+  /* let width = renderedConfig.bbox->Sidewinder.Rectangle.width;
+     let height = renderedConfig.bbox->Sidewinder.Rectangle.height; */
 
-    /* /* transform is unnecessary b/c top-level always has identity transform b/c parent controls transform */
-       let xOffset =
-         /* renderedConfig.transform.translate.x +.  */ renderedConfig.bbox->Sidewinder.Rectangle.x1;
-       let yOffset = /* renderedConfig.transform.translate.y +. */
-       renderedConfig.bbox->Sidewinder.Rectangle.y1; */
-    <div>
-      <div> {React.string("state: ")} {React.string(string_of_int(state.pos))} </div>
-      <button
-        style=leftButtonStyle
-        onClick={_event => {
-          dispatch(Decrement);
-          setAnimationState(_ => Animation.initValue);
-        }}>
-        {React.string("<-")}
-      </button>
-      <button
-        style=rightButtonStyle
-        onClick={_event => {
-          dispatch(Increment);
-          setAnimationState(_ => Animation.initValue);
-        }}>
-        {React.string("->")}
-      </button>
-      <br />
-      <br />
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width={Js.Float.toString(width +. padding *. 2.)}
-        height={Js.Float.toString(height +. padding *. 2.)}>
-        <g
-          transform={
-            "translate("
-            ++ Js.Float.toString(xOffset +. padding)
-            ++ ", "
-            ++ Js.Float.toString(yOffset +. padding)
-            ++ ")"
-          }>
-          <AnimationProvider value=Animation.{curr, next}> renderedConfig </AnimationProvider>
-        </g>
-      </svg>
-    </div>;
+  /* /* transform is unnecessary b/c top-level always has identity transform b/c parent controls transform */
+     let xOffset =
+       /* renderedConfig.transform.translate.x +.  */ renderedConfig.bbox->Sidewinder.Rectangle.x1;
+     let yOffset = /* renderedConfig.transform.translate.y +. */
+     renderedConfig.bbox->Sidewinder.Rectangle.y1; */
+  <div>
+    <div> {React.string("state: ")} {React.string(string_of_int(state.pos))} </div>
+    <button
+      style=leftButtonStyle
+      onClick={_event => {
+        dispatch(Decrement);
+        setAnimationState(_ => Animation.initValue);
+      }}>
+      {React.string("<-")}
+    </button>
+    <button
+      style=rightButtonStyle
+      onClick={_event => {
+        dispatch(Increment);
+        setAnimationState(_ => Animation.initValue);
+      }}>
+      {React.string("->")}
+    </button>
+    <br />
+    <br />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={Js.Float.toString(width +. padding *. 2.)}
+      height={Js.Float.toString(height +. padding *. 2.)}>
+      <g
+        transform={
+          "translate("
+          ++ Js.Float.toString(xOffset +. padding)
+          ++ ", "
+          ++ Js.Float.toString(yOffset +. padding)
+          ++ ")"
+        }>
+        <AnimationProvider value=Animation.{curr, next}> renderedConfig </AnimationProvider>
+      </g>
+    </svg>
+  </div>;
   // };
   /* ->Belt.Array.mapWithIndex((i, dog) => {
               let imageStyle =
