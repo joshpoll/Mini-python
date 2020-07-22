@@ -69,21 +69,38 @@ type unary_op =
 type binary_op =
   | Add;
 
+type stmt_op =
+  | ExprStmt;
+
+/* TODO: feels like this should be a GADT */
 type op =
   | Unary(unary_op)
-  | Binary(binary_op);
+  | Binary(binary_op)
+  | Stmt(stmt_op);
 
 type exp =
   | NoneLiteral
   | BooleanLiteral(bool)
   | IntegerLiteral(int)
   | StringLiteral(string)
-  | OpExpr(op_expr)
+  | UnaryExpr(unary_expr)
+  | BinaryExpr(binary_expr)
 
 and op_expr = {
   op,
   args: list(exp),
-};
+}
+
+and unary_expr = op_expr
+
+and binary_expr = op_expr;
+
+type stmt = op_expr;
+
+type stmts = list(stmt);
+
+/* TODO: write semantics for this */
+type program = {stmts};
 
 /* ctxts */
 type op_ctxt = {
@@ -92,6 +109,11 @@ type op_ctxt = {
   values: list(value),
 };
 
+type unary_ctxt = op_ctxt;
+
+type binary_ctxt = op_ctxt;
+
+/* TODO: might have to bring this back to handle stmt and eventually program */
 /* type ctxt =
    | OpCtxt(op_ctxt); */
 
@@ -113,6 +135,9 @@ type preval = op_preval;
 /* False -> VBool(false) */
 
 type focus =
+  | Empty
+  | Program(program)
+  | Stmt(stmt)
   | Exp(exp)
   | PreVal(preval)
   | Value(value);
@@ -134,19 +159,30 @@ type config = {
 let step = (c: config): option(config) =>
   switch (c) {
   /* zipper rules */
-  /* zipper skip - op_expr */
-  | {zipper: {focus: Exp(OpExpr({op, args: []})), ctxts}, env, store, glob} =>
+  /* zipper begin - UnaryExpr */
+  | {zipper: {focus: Exp(UnaryExpr({op, args: [a]})), ctxts}, env, store, glob} =>
     Some({
       zipper: {
-        focus: PreVal({op, values: []}),
-        ctxts,
+        focus: Exp(a),
+        ctxts: [{op, args: [], values: []}, ...ctxts],
       },
       env,
       store,
       glob,
     })
-  /* zipper begin - op_expr */
-  | {zipper: {focus: Exp(OpExpr({op, args: [a, ...args]})), ctxts}, env, store, glob} =>
+  /* zipper begin - BinaryExpr */
+  | {zipper: {focus: Exp(BinaryExpr({op, args: [a1, a2]})), ctxts}, env, store, glob} =>
+    Some({
+      zipper: {
+        focus: Exp(a1),
+        ctxts: [{op, args: [a2], values: []}, ...ctxts],
+      },
+      env,
+      store,
+      glob,
+    })
+  /* zipper begin - Stmt */
+  | {zipper: {focus: Stmt({op, args: [a, ...args]}), ctxts}, env, store, glob} =>
     Some({
       zipper: {
         focus: Exp(a),
@@ -229,6 +265,17 @@ let step = (c: config): option(config) =>
       store,
       glob,
     })
+  /* EXPR-STMT */
+  | {zipper: {focus: PreVal({op: Stmt(ExprStmt), values: [_v]}), ctxts}, env, store, glob} =>
+    Some({
+      zipper: {
+        focus: Empty,
+        ctxts,
+      },
+      env,
+      store,
+      glob,
+    })
   /* NEGATE */
   | {zipper: {focus: PreVal({op: Unary(Neg), values: [VInt(i1)]}), ctxts}, env, store, glob} =>
     Some({
@@ -261,7 +308,7 @@ let step = (c: config): option(config) =>
 
 let inject = (e: exp): config => {
   zipper: {
-    focus: Exp(e),
+    focus: Stmt({op: Stmt(ExprStmt), args: [e]}),
     ctxts: [],
   },
   env: [],
@@ -280,7 +327,7 @@ let inject = (e: exp): config => {
    }; */
 let isFinal = (c: config): bool => false;
 
-let rec iterateMaybeAux = (f, x) =>
+let rec iterateMaybeAux = (f: 'a => option('a), x: option('a)): list('a) =>
   switch (x) {
   | None => []
   | Some(x) =>
@@ -290,7 +337,7 @@ let rec iterateMaybeAux = (f, x) =>
 
 let advance = step;
 
-let rec takeWhileInclusive = (p, l) =>
+let rec takeWhileInclusive = (p, l: list('a)) =>
   switch (l) {
   | [] => []
   | [x, ...xs] => [
@@ -307,5 +354,6 @@ let iterateMaybe = (f: 'a => option('a), x: 'a): list('a) => iterateMaybeAux(f, 
 
 let interpretTrace = (p: exp): list(config) => {
   let states = iterateMaybe(step, inject(p));
-  takeWhileInclusive(c => !isFinal(c), states);
+  /* takeWhileInclusive(c => !isFinal(c), states) */
+  states;
 };

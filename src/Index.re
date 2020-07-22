@@ -91,7 +91,7 @@ ReactDOMRe.render(
 
 /* NEG */
 ReactDOMRe.render(
-  <VizTrace program={MiniPython.OpExpr({op: Unary(Neg), args: [IntegerLiteral(1)]})} />,
+  <VizTrace program={MiniPython.UnaryExpr({op: Unary(Neg), args: [IntegerLiteral(1)]})} />,
   makeContainer("NEG"),
 );
 
@@ -99,7 +99,7 @@ ReactDOMRe.render(
 ReactDOMRe.render(
   <VizTrace
     program={
-      MiniPython.OpExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(2)]})
+      MiniPython.BinaryExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(2)]})
     }
   />,
   makeContainer("ARITH: +"),

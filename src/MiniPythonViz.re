@@ -42,6 +42,14 @@ let vizBinaryOp = (bo: binary_op) =>
     )
   };
 
+let vizStmtOp = (so: stmt_op) =>
+  switch (so) {
+  | ExprStmt =>
+    Some(
+      ConfigIR.mk(~name="ExprStmt", ~nodes=[None], ~render=([e]) => Theia.noOp(e, []), ()),
+    )
+  };
+
 let vizOp = (o: op) =>
   switch (o) {
   | Unary(unary_op) =>
@@ -58,6 +66,15 @@ let vizOp = (o: op) =>
       ConfigIR.mk(
         ~name="Binary",
         ~nodes=[vizBinaryOp(binary_op)],
+        ~render=([bo]) => Theia.noOp(bo, []),
+        (),
+      ),
+    )
+  | Stmt(stmt_op) =>
+    Some(
+      ConfigIR.mk(
+        ~name="Binary",
+        ~nodes=[vizStmtOp(stmt_op)],
         ~render=([bo]) => Theia.noOp(bo, []),
         (),
       ),
@@ -83,11 +100,20 @@ let rec vizExp = (e: exp) =>
     )
   | StringLiteral(string) =>
     Some(ConfigIR.mk(~name="StringLiteral", ~nodes=[], ~render=_ => Theia.str(string), ()))
-  | OpExpr(op_expr) =>
+  | UnaryExpr(unary_expr) =>
     Some(
       ConfigIR.mk(
-        ~name="OpExpr",
-        ~nodes=[vizOpExpr(op_expr)],
+        ~name="UnaryExpr",
+        ~nodes=[vizOpExpr(unary_expr)],
+        ~render=([oe]) => Theia.noOp(oe, []),
+        (),
+      ),
+    )
+  | BinaryExpr(binary_expr) =>
+    Some(
+      ConfigIR.mk(
+        ~name="BinaryExpr",
+        ~nodes=[vizOpExpr(binary_expr)],
         ~render=([oe]) => Theia.noOp(oe, []),
         (),
       ),
@@ -108,7 +134,7 @@ and vizExps = (exps: list(exp)) =>
     )
   }
 
-and vizOpExpr = ({op, args}: op_expr) =>
+and vizOpExpr = ({op, args}: unary_expr) =>
   Some(
     ConfigIR.mk(~name="op_expr", ~nodes=[vizOp(op), vizExps(args)], ~render=Theia.hSeq, ()),
   );
@@ -154,7 +180,31 @@ let rec vizValues = (values: list(value)) =>
     )
   };
 
-let vizOpCtxt = ({op, args, values}: op_ctxt) =>
+let vizStmt = s =>
+  Some(
+    ConfigIR.mk(
+      ~name="Stmt",
+      ~nodes=[vizOpExpr(s)],
+      ~render=([oe]) => Theia.noOp(oe, []),
+      (),
+    ),
+  );
+
+let rec vizStmts = (stmts: list(stmt)) =>
+  switch (stmts) {
+  | [] => Some(ConfigIR.mk(~name="stmts_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
+  | [stmt, ...stmts] =>
+    Some(
+      ConfigIR.mk(
+        ~name="stmts_cons",
+        ~nodes=[vizStmt(stmt), vizStmts(stmts)],
+        ~render=Theia.vSeq,
+        (),
+      ),
+    )
+  };
+
+let vizOpCtxt = ({op, args, values}: unary_ctxt) =>
   Some(
     ConfigIR.mk(
       ~name="op_ctxt",
@@ -194,6 +244,17 @@ let vizPreVal = (pv: preval) => vizOpPreval(pv);
 
 let vizFocus = (f: focus) =>
   switch (f) {
+  | Empty => Some(ConfigIR.mk(~name="focus_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
+  | Program(p) => failwith("TODO")
+  | Stmt(s) =>
+    Some(
+      ConfigIR.mk(
+        ~name="focus_stmt",
+        ~nodes=[vizStmt(s)],
+        ~render=([s]) => Theia.noOp(s, []),
+        (),
+      ),
+    )
   | Exp(e) =>
     Some(
       ConfigIR.mk(
