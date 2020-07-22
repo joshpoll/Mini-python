@@ -92,8 +92,10 @@ type op_ctxt = {
   values: list(value),
 };
 
-type ctxt =
-  | OpCtxt(op_ctxt);
+/* type ctxt =
+   | OpCtxt(op_ctxt); */
+
+type ctxt = op_ctxt;
 
 /* preval */
 type op_preval = {
@@ -101,8 +103,10 @@ type op_preval = {
   values: list(value),
 };
 
-type preval =
-  | OpPreval(op_preval);
+/* type preval =
+   | OpPreval(op_preval); */
+
+type preval = op_preval;
 
 /* exp -> val */
 /* None -> VNone*/
@@ -134,7 +138,7 @@ let step = (c: config): option(config) =>
   | {zipper: {focus: Exp(OpExpr({op, args: []})), ctxts}, env, store, glob} =>
     Some({
       zipper: {
-        focus: PreVal(OpPreval({op, values: []})),
+        focus: PreVal({op, values: []}),
         ctxts,
       },
       env,
@@ -146,7 +150,7 @@ let step = (c: config): option(config) =>
     Some({
       zipper: {
         focus: Exp(a),
-        ctxts: [OpCtxt({op, args, values: []}), ...ctxts],
+        ctxts: [{op, args, values: []}, ...ctxts],
       },
       env,
       store,
@@ -154,7 +158,7 @@ let step = (c: config): option(config) =>
     })
   /* zipper continue - op_expr */
   | {
-      zipper: {focus: Value(v), ctxts: [OpCtxt({op, args: [a, ...args], values}), ...ctxts]},
+      zipper: {focus: Value(v), ctxts: [{op, args: [a, ...args], values}, ...ctxts]},
       env,
       store,
       glob,
@@ -162,22 +166,17 @@ let step = (c: config): option(config) =>
     Some({
       zipper: {
         focus: Exp(a),
-        ctxts: [OpCtxt({op, args, values: [v, ...values]}), ...ctxts],
+        ctxts: [{op, args, values: [v, ...values]}, ...ctxts],
       },
       env,
       store,
       glob,
     })
   /* zipper end - op_expr */
-  | {
-      zipper: {focus: Value(v), ctxts: [OpCtxt({op, args: [], values}), ...ctxts]},
-      env,
-      store,
-      glob,
-    } =>
+  | {zipper: {focus: Value(v), ctxts: [{op, args: [], values}, ...ctxts]}, env, store, glob} =>
     Some({
       zipper: {
-        focus: PreVal(OpPreval({op, values: List.rev([v, ...values])})), /* we reverse the values, since they were pushed in reverse order */
+        focus: PreVal({op, values: List.rev([v, ...values])}), /* we reverse the values, since they were pushed in reverse order */
         ctxts,
       },
       env,
@@ -231,12 +230,7 @@ let step = (c: config): option(config) =>
       glob,
     })
   /* NEGATE */
-  | {
-      zipper: {focus: PreVal(OpPreval({op: Unary(Neg), values: [VInt(i1)]})), ctxts},
-      env,
-      store,
-      glob,
-    } =>
+  | {zipper: {focus: PreVal({op: Unary(Neg), values: [VInt(i1)]}), ctxts}, env, store, glob} =>
     Some({
       zipper: {
         focus: Value(VInt(- i1)),
@@ -248,7 +242,7 @@ let step = (c: config): option(config) =>
     })
   /* ARITH: + */
   | {
-      zipper: {focus: PreVal(OpPreval({op: Binary(Add), values: [VInt(i1), VInt(i2)]})), ctxts},
+      zipper: {focus: PreVal({op: Binary(Add), values: [VInt(i1), VInt(i2)]}), ctxts},
       env,
       store,
       glob,

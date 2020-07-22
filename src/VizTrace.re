@@ -35,9 +35,9 @@ let toggle = (Animation.{curr: _, next}) =>
 let transform = n =>
   n
   |> MiniPythonTransform.transformOpExpr
-  // |> ZEDTransform.transformZCtxt
-  |> MiniPythonTransform.transformOpPreval;
-// |> ZEDTransform.transformZipper
+  |> MiniPythonTransform.transformOpCtxt
+  |> MiniPythonTransform.transformOpPreval
+  |> MiniPythonTransform.transformZipper;
 // |> ZEDTransform.transformContinuation;
 
 [@react.component]

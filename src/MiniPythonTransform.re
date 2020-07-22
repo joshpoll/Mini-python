@@ -53,23 +53,23 @@ let rec transformOpExprOption = on =>
 
 let transformOpExpr = n => transformOpExprOption(Some(n))->Belt.Option.getExn;
 
-// let rec transformZCtxtOption = on =>
-//   switch (on) {
-//   | None => None
-//   | Some(n) =>
-//     let {name, nodes} as n = {...n, nodes: List.map(transformZCtxtOption, n.nodes)};
-//     if (name == "zctxt") {
-//       let [Some({nodes}), Some(values), None, Some(args)] = nodes;
-//       let [Some({nodes} as op)] = nodes;
-//       let values = valuesToList(values);
-//       let args = aexpsToList(args);
-//       Some({...op, nodes: nodes->mergeNone(values)->mergeNone([None, ...args])});
-//     } else {
-//       Some(n);
-//     };
-//   };
+let rec transformOpCtxtOption = on =>
+  switch (on) {
+  | None => None
+  | Some(n) =>
+    let {name, nodes} as n = {...n, nodes: List.map(transformOpCtxtOption, n.nodes)};
+    if (name == "op_ctxt") {
+      let [Some({nodes}), Some(args), None, Some(values)] = nodes;
+      let [Some({nodes} as op)] = nodes;
+      let args = expsToList(args);
+      let values = valuesToList(values);
+      Some({...op, nodes: nodes->mergeNone(values)->mergeNone([None, ...args])});
+    } else {
+      Some(n);
+    };
+  };
 
-// let transformZCtxt = n => transformZCtxtOption(Some(n))->Belt.Option.getExn;
+let transformOpCtxt = n => transformOpCtxtOption(Some(n))->Belt.Option.getExn;
 
 let rec transformOpPrevalOption = on =>
   switch (on) {
@@ -88,68 +88,68 @@ let rec transformOpPrevalOption = on =>
 
 let transformOpPreval = n => transformOpPrevalOption(Some(n))->Belt.Option.getExn;
 
-// let rec ctxtsToList = ({name, nodes} as ctxts) =>
-//   if (name == "ctxts_empty") {
-//     [];
-//   } else if (name == "ctxts_cons") {
-//     let [Some(ctxt), Some(ctxts)] = nodes;
-//     [Some(ctxt), ...ctxtsToList(ctxts)];
-//   } else {
-//     Js.log2("expected ctxts_empty or ctxts_cons. found", name);
-//     assert(false);
-//   };
+let rec ctxtsToList = ({name, nodes} as ctxts) =>
+  if (name == "ctxts_empty") {
+    [];
+  } else if (name == "ctxts_cons") {
+    let [Some(ctxt), Some(ctxts)] = nodes;
+    [Some(ctxt), ...ctxtsToList(ctxts)];
+  } else {
+    Js.log2("expected ctxts_empty or ctxts_cons. found", name);
+    assert(false);
+  };
 
-// let rec zipUp =
-//         (
-//           f: option(Sidewinder.ConfigGraphIR.node),
-//           cs: list(option(Sidewinder.ConfigGraphIR.node)),
-//         ) =>
-//   switch (cs) {
-//   | [] => f
-//   | [c, ...cs] =>
-//     switch (c) {
-//     | None => None
-//     | Some(c) =>
-//       let place =
-//         switch (f) {
-//         | None => {pat: None, extFns: []}
-//         | Some(f) =>
-//           switch (f.place.pat) {
-//           | None => {pat: None, extFns: f.place.extFns}
-//           /* TODO: need to add into flow */
-//           | Some(place) => {pat: Some(place ++ ".highlight"), extFns: f.place.extFns}
-//           }
-//         };
-//       let f =
-//         Some(
-//           Sidewinder.ConfigGraphIR.mk(
-//             /* TODO: add to flow!!! */
-//             /* ~place?, */
-//             ~name="highlight",
-//             ~nodes=[f],
-//             ~render=([f]) => Bobcat.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
-//             (),
-//           ),
-//         );
-//       zipUp(Some({...c, nodes: mergeNone(c.nodes, [f])}), cs);
-//     }
-//   };
+let rec zipUp =
+        (
+          f: option(Sidewinder.ConfigGraphIR.node),
+          cs: list(option(Sidewinder.ConfigGraphIR.node)),
+        ) =>
+  switch (cs) {
+  | [] => f
+  | [c, ...cs] =>
+    switch (c) {
+    | None => None
+    | Some(c) =>
+      let place =
+        switch (f) {
+        | None => {pat: None, extFns: []}
+        | Some(f) =>
+          switch (f.place.pat) {
+          | None => {pat: None, extFns: f.place.extFns}
+          /* TODO: need to add into flow */
+          | Some(place) => {pat: Some(place ++ ".highlight"), extFns: f.place.extFns}
+          }
+        };
+      let f =
+        Some(
+          Sidewinder.ConfigGraphIR.mk(
+            /* TODO: add to flow!!! */
+            /* ~place?, */
+            ~name="highlight",
+            ~nodes=[f],
+            ~render=([f]) => Bobcat.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
+            (),
+          ),
+        );
+      zipUp(Some({...c, nodes: mergeNone(c.nodes, [f])}), cs);
+    }
+  };
 
-// let rec transformZipperOption = on =>
-//   switch (on) {
-//   | None => None
-//   | Some(n) =>
-//     let {name, nodes} as n = {...n, nodes: List.map(transformZipperOption, n.nodes)};
-//     if (name == "zipper") {
-//       let [f, Some(ctxts)] = nodes;
-//       let ctxts = ctxtsToList(ctxts);
-//       zipUp(f, ctxts);
-//     } else {
-//       Some(n);
-//     };
-//   };
+let rec transformZipperOption = on =>
+  switch (on) {
+  | None => None
+  | Some(n) =>
+    let {name, nodes} as n = {...n, nodes: List.map(transformZipperOption, n.nodes)};
+    if (name == "zipper") {
+      let [f, Some(ctxts)] = nodes;
+      let ctxts = ctxtsToList(ctxts);
+      zipUp(f, ctxts);
+    } else {
+      Some(n);
+    };
+  };
 
-// let transformZipper = n => transformZipperOption(Some(n))->Belt.Option.getExn;
+let transformZipper = n => transformZipperOption(Some(n))->Belt.Option.getExn;
 
 // let rec transformContinuationOption = on =>
 //   switch (on) {

@@ -154,6 +154,32 @@ let rec vizValues = (values: list(value)) =>
     )
   };
 
+let vizOpCtxt = ({op, args, values}: op_ctxt) =>
+  Some(
+    ConfigIR.mk(
+      ~name="op_ctxt",
+      ~nodes=[vizOp(op), vizExps(args), None, vizValues(values)],
+      ~render=Theia.hSeq,
+      (),
+    ),
+  );
+
+let vizCtxt = (c: ctxt) => vizOpCtxt(c);
+
+let rec vizCtxts = (ctxts: ctxts) =>
+  switch (ctxts) {
+  | [] => Some(ConfigIR.mk(~name="ctxts_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
+  | [c, ...ctxts] =>
+    Some(
+      ConfigIR.mk(
+        ~name="ctxts_cons",
+        ~nodes=[vizCtxt(c), vizCtxts(ctxts)],
+        ~render=Theia.vSeq,
+        (),
+      ),
+    )
+  };
+
 let vizOpPreval = ({op, values}: op_preval) =>
   Some(
     ConfigIR.mk(
@@ -164,18 +190,7 @@ let vizOpPreval = ({op, values}: op_preval) =>
     ),
   );
 
-let vizPreVal = (pv: preval) =>
-  switch (pv) {
-  | OpPreval(op) =>
-    Some(
-      ConfigIR.mk(
-        ~name="OpPreval",
-        ~nodes=[vizOpPreval(op)],
-        ~render=([op]) => Theia.noOp(op, []),
-        (),
-      ),
-    )
-  };
+let vizPreVal = (pv: preval) => vizOpPreval(pv);
 
 let vizFocus = (f: focus) =>
   switch (f) {
@@ -212,8 +227,8 @@ let vizZipper = ({focus, ctxts}: zipper) =>
   Some(
     ConfigIR.mk(
       ~name="zipper",
-      ~nodes=[vizFocus(focus)],
-      ~render=([focus]) => Theia.noOp(focus, []),
+      ~nodes=[vizFocus(focus), vizCtxts(ctxts)],
+      ~render=Theia.hSeq,
       (),
     ),
   );
