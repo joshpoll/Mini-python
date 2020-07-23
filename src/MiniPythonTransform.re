@@ -88,6 +88,17 @@ let rec transformOpPrevalOption = on =>
 
 let transformOpPreval = n => transformOpPrevalOption(Some(n))->Belt.Option.getExn;
 
+let rec op_ctxtsToList = ({name, nodes} as op_ctxts) =>
+  if (name == "op_ctxts_empty") {
+    [];
+  } else if (name == "op_ctxts_cons") {
+    let [Some(op_ctxt), Some(op_ctxts)] = nodes;
+    [Some(op_ctxt), ...op_ctxtsToList(op_ctxts)];
+  } else {
+    Js.log2("expected op_ctxts_empty or op_ctxts_cons. found", name);
+    assert(false);
+  };
+
 let rec ctxtsToList = ({name, nodes} as ctxts) =>
   if (name == "ctxts_empty") {
     [];
@@ -135,21 +146,21 @@ let rec zipUp =
     }
   };
 
-let rec transformZipperOption = on =>
+let rec transformWorkspaceZipperOption = on =>
   switch (on) {
   | None => None
   | Some(n) =>
-    let {name, nodes} as n = {...n, nodes: List.map(transformZipperOption, n.nodes)};
-    if (name == "zipper") {
-      let [f, Some(ctxts)] = nodes;
-      let ctxts = ctxtsToList(ctxts);
-      zipUp(f, ctxts);
+    let {name, nodes} as n = {...n, nodes: List.map(transformWorkspaceZipperOption, n.nodes)};
+    if (name == "workspaceZipper") {
+      let [f, Some(op_ctxts)] = nodes;
+      let op_ctxts = op_ctxtsToList(op_ctxts);
+      zipUp(f, op_ctxts);
     } else {
       Some(n);
     };
   };
 
-let transformZipper = n => transformZipperOption(Some(n))->Belt.Option.getExn;
+let transformWorkspaceZipper = n => transformWorkspaceZipperOption(Some(n))->Belt.Option.getExn;
 
 // let rec transformContinuationOption = on =>
 //   switch (on) {

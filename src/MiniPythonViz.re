@@ -214,7 +214,42 @@ let vizOpCtxt = ({op, args, values}: unary_ctxt) =>
     ),
   );
 
-let vizCtxt = (c: ctxt) => vizOpCtxt(c);
+let rec vizOpCtxts = (op_ctxts: op_ctxts) =>
+  switch (op_ctxts) {
+  | [] => Some(ConfigIR.mk(~name="op_ctxts_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
+  | [oc, ...op_ctxts] =>
+    Some(
+      ConfigIR.mk(
+        ~name="op_ctxts_cons",
+        ~nodes=[vizOpCtxt(oc), vizOpCtxts(op_ctxts)],
+        ~render=Theia.vSeq,
+        (),
+      ),
+    )
+  };
+
+let vizCtxt = (c: ctxt) =>
+  switch (c) {
+  | OpCtxt(oc) =>
+    Some(
+      ConfigIR.mk(
+        ~name="OpCtxt",
+        ~nodes=[vizOpCtxt(oc)],
+        ~render=([oc]) => Theia.noOp(oc, []),
+        (),
+      ),
+    )
+  | Program(pc) => failwith("TODO")
+  | Stmt(sc) =>
+    Some(
+      ConfigIR.mk(
+        ~name="StmtCtxt",
+        ~nodes=[vizOpCtxt(sc)],
+        ~render=([sc]) => Theia.noOp(sc, []),
+        (),
+      ),
+    )
+  };
 
 let rec vizCtxts = (ctxts: ctxts) =>
   switch (ctxts) {
@@ -284,20 +319,20 @@ let vizFocus = (f: focus) =>
     )
   };
 
-let vizZipper = ({focus, ctxts}: zipper) =>
+let vizWorkspaceZipper = ({focus, op_ctxts}: workspaceZipper) =>
   Some(
     ConfigIR.mk(
-      ~name="zipper",
-      ~nodes=[vizFocus(focus), vizCtxts(ctxts)],
+      ~name="workspaceZipper",
+      ~nodes=[vizFocus(focus), vizOpCtxts(op_ctxts)],
       ~render=Theia.hSeq,
       (),
     ),
   );
 
-let vizConfig = ({zipper, env, store, glob}: config) =>
+let vizConfig = ({workspaceZipper, env, store, glob}: config) =>
   ConfigIR.mk(
     ~name="config",
-    ~nodes=[vizZipper(zipper)],
-    ~render=([zipper]) => Theia.noOp(zipper, []),
+    ~nodes=[vizWorkspaceZipper(workspaceZipper)],
+    ~render=([z]) => Theia.noOp(z, []),
     (),
   );

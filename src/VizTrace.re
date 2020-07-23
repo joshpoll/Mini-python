@@ -37,7 +37,8 @@ let transform = n =>
   |> MiniPythonTransform.transformOpExpr
   |> MiniPythonTransform.transformOpCtxt
   |> MiniPythonTransform.transformOpPreval
-  |> MiniPythonTransform.transformZipper;
+  |> MiniPythonTransform.transformWorkspaceZipper;
+
 // |> ZEDTransform.transformContinuation;
 
 [@react.component]

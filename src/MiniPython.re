@@ -113,11 +113,13 @@ type unary_ctxt = op_ctxt;
 
 type binary_ctxt = op_ctxt;
 
-/* TODO: might have to bring this back to handle stmt and eventually program */
-/* type ctxt =
-   | OpCtxt(op_ctxt); */
+type program_ctxt = unit;
+type stmt_ctxt = op_ctxt;
 
-type ctxt = op_ctxt;
+type ctxt =
+  | OpCtxt(op_ctxt)
+  | Program(program_ctxt)
+  | Stmt(stmt_ctxt);
 
 /* preval */
 type op_preval = {
@@ -142,15 +144,24 @@ type focus =
   | PreVal(preval)
   | Value(value);
 
+type op_ctxts = list(op_ctxt);
+
 type ctxts = list(ctxt);
 
-type zipper = {
+/* for now only used for expressions, but maybe more in the future, so calling it workspace */
+type workspaceZipper = {
+  focus,
+  op_ctxts,
+};
+
+type programZipper = {
   focus,
   ctxts,
 };
 
 type config = {
-  zipper,
+  workspaceZipper,
+  programZipper,
   env,
   store,
   glob,
@@ -160,33 +171,36 @@ let step = (c: config): option(config) =>
   switch (c) {
   /* zipper rules */
   /* zipper begin - UnaryExpr */
-  | {zipper: {focus: Exp(UnaryExpr({op, args: [a]})), ctxts}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {focus: Exp(UnaryExpr({op, args: [a]})), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Exp(a),
-        ctxts: [{op, args: [], values: []}, ...ctxts],
+        op_ctxts: [{op, args: [], values: []}, ...op_ctxts],
       },
       env,
       store,
       glob,
     })
   /* zipper begin - BinaryExpr */
-  | {zipper: {focus: Exp(BinaryExpr({op, args: [a1, a2]})), ctxts}, env, store, glob} =>
-    Some({
-      zipper: {
-        focus: Exp(a1),
-        ctxts: [{op, args: [a2], values: []}, ...ctxts],
-      },
+  | {
+      programZipper,
+      workspaceZipper: {focus: Exp(BinaryExpr({op, args: [a1, a2]})), op_ctxts},
       env,
       store,
       glob,
-    })
-  /* zipper begin - Stmt */
-  | {zipper: {focus: Stmt({op, args: [a, ...args]}), ctxts}, env, store, glob} =>
+    } =>
     Some({
-      zipper: {
-        focus: Exp(a),
-        ctxts: [{op, args, values: []}, ...ctxts],
+      programZipper,
+      workspaceZipper: {
+        focus: Exp(a1),
+        op_ctxts: [{op, args: [a2], values: []}, ...op_ctxts],
       },
       env,
       store,
@@ -194,94 +208,200 @@ let step = (c: config): option(config) =>
     })
   /* zipper continue - op_expr */
   | {
-      zipper: {focus: Value(v), ctxts: [{op, args: [a, ...args], values}, ...ctxts]},
+      programZipper,
+      workspaceZipper: {
+        focus: Value(v),
+        op_ctxts: [{op, args: [a, ...args], values}, ...op_ctxts],
+      },
       env,
       store,
       glob,
     } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Exp(a),
-        ctxts: [{op, args, values: [v, ...values]}, ...ctxts],
+        op_ctxts: [{op, args, values: [v, ...values]}, ...op_ctxts],
       },
       env,
       store,
       glob,
     })
   /* zipper end - op_expr */
-  | {zipper: {focus: Value(v), ctxts: [{op, args: [], values}, ...ctxts]}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {focus: Value(v), op_ctxts: [{op, args: [], values}, ...op_ctxts]},
+      env,
+      store,
+      glob,
+    } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: PreVal({op, values: List.rev([v, ...values])}), /* we reverse the values, since they were pushed in reverse order */
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
       glob,
     })
 
+  // /* zipper begin - Stmt */
+  // | {
+  //     programZipper,
+  //     workspaceZipper: {focus: Stmt({op, args: [a, ...args]}), op_ctxts},
+  //     env,
+  //     store,
+  //     glob,
+  //   } =>
+  //   Some({
+  //     programZipper,
+  //     workspaceZipper: {
+  //       focus: Exp(a),
+  //       op_ctxts: [Stmt({op, args, values: []}), ...op_ctxts],
+  //     },
+  //     env,
+  //     store,
+  //     glob,
+  //   })
+  // /* zipper continue - Stmt */
+  // | {
+  //     programZipper,
+  //     workspaceZipper: {
+  //       focus: Value(v),
+  //       op_ctxts: [Stmt({op, args: [a, ...args], values}), ...op_ctxts],
+  //     },
+  //     env,
+  //     store,
+  //     glob,
+  //   } =>
+  //   Some({
+  //     programZipper,
+  //     workspaceZipper: {
+  //       focus: Exp(a),
+  //       op_ctxts: [Stmt({op, args, values: [v, ...values]}), ...op_ctxts],
+  //     },
+  //     env,
+  //     store,
+  //     glob,
+  //   })
+  // /* zipper end - Stmt */
+  // | {
+  //     programZipper,
+  //     workspaceZipper: {focus: Value(v), op_ctxts: [Stmt({op, args: [], values}), ...op_ctxts]},
+  //     env,
+  //     store,
+  //     glob,
+  //   } =>
+  //   Some({
+  //     programZipper,
+  //     workspaceZipper: {
+  //       focus: PreVal({op, values: List.rev([v, ...values])}), /* we reverse the values, since they were pushed in reverse order */
+  //       op_ctxts,
+  //     },
+  //     env,
+  //     store,
+  //     glob,
+  //   })
+
   /* ChocoPy rules */
   /* NONE */
-  | {zipper: {focus: Exp(NoneLiteral), ctxts}, env, store, glob} =>
+  | {programZipper, workspaceZipper: {focus: Exp(NoneLiteral), op_ctxts}, env, store, glob} =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Value(VNone),
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
       glob,
     })
   /* BOOL-TRUE and BOOL-FALSE */
-  | {zipper: {focus: Exp(BooleanLiteral(bool)), ctxts}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {focus: Exp(BooleanLiteral(bool)), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Value(VBool(bool)),
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
       glob,
     })
   /* INT */
-  | {zipper: {focus: Exp(IntegerLiteral(int)), ctxts}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {focus: Exp(IntegerLiteral(int)), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Value(VInt(int)),
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
       glob,
     })
   /* STR */
-  | {zipper: {focus: Exp(StringLiteral(string)), ctxts}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {focus: Exp(StringLiteral(string)), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Value(VString(String.length(string), string)),
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
       glob,
     })
   /* EXPR-STMT */
-  | {zipper: {focus: PreVal({op: Stmt(ExprStmt), values: [_v]}), ctxts}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {focus: PreVal({op: Stmt(ExprStmt), values: [_v]}), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Empty,
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
       glob,
     })
   /* NEGATE */
-  | {zipper: {focus: PreVal({op: Unary(Neg), values: [VInt(i1)]}), ctxts}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {focus: PreVal({op: Unary(Neg), values: [VInt(i1)]}), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Value(VInt(- i1)),
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
@@ -289,15 +409,20 @@ let step = (c: config): option(config) =>
     })
   /* ARITH: + */
   | {
-      zipper: {focus: PreVal({op: Binary(Add), values: [VInt(i1), VInt(i2)]}), ctxts},
+      programZipper,
+      workspaceZipper: {
+        focus: PreVal({op: Binary(Add), values: [VInt(i1), VInt(i2)]}),
+        op_ctxts,
+      },
       env,
       store,
       glob,
     } =>
     Some({
-      zipper: {
+      programZipper,
+      workspaceZipper: {
         focus: Value(VInt(i1 + i2)),
-        ctxts,
+        op_ctxts,
       },
       env,
       store,
@@ -307,9 +432,13 @@ let step = (c: config): option(config) =>
   };
 
 let inject = (e: exp): config => {
-  zipper: {
-    focus: Stmt({op: Stmt(ExprStmt), args: [e]}),
+  programZipper: {
+    focus: Empty,
     ctxts: [],
+  },
+  workspaceZipper: {
+    focus: Exp(e),
+    op_ctxts: [],
   },
   env: [],
   store: [],
@@ -322,7 +451,7 @@ let inject = (e: exp): config => {
 
 /* let isFinal = (c: config): bool =>
    switch (c) {
-   | {zipper: {focus: Value(_), ctxts: []}, env: _, stack: []} => true
+   | {zipper: {focus: Value(_), op_ctxts: []}, env: _, stack: []} => true
    | _ => false
    }; */
 let isFinal = (c: config): bool => false;
@@ -337,7 +466,7 @@ let rec iterateMaybeAux = (f: 'a => option('a), x: option('a)): list('a) =>
 
 let advance = step;
 
-let rec takeWhileInclusive = (p, l: list('a)) =>
+let rec takeWhileInclusive = (p, l: list('a)): list('a) =>
   switch (l) {
   | [] => []
   | [x, ...xs] => [
