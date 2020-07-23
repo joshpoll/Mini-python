@@ -240,23 +240,14 @@ let vizOpPreval = ({op, values}: op_preval) =>
 
 let vizPreVal = (pv: preval) => vizOpPreval(pv);
 
-let vizFocus = (f: focus) =>
-  switch (f) {
-  | Empty => Some(ConfigIR.mk(~name="focus_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
-  | Program(p) => failwith("TODO")
-  | Stmt(s) =>
-    Some(
-      ConfigIR.mk(
-        ~name="focus_stmt",
-        ~nodes=[vizStmt(s)],
-        ~render=([s]) => Theia.noOp(s, []),
-        (),
-      ),
-    )
+let vizWorkspaceFocus = (wf: workspaceFocus) =>
+  switch (wf) {
+  | Empty =>
+    Some(ConfigIR.mk(~name="workspaceFocus_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
   | Exp(e) =>
     Some(
       ConfigIR.mk(
-        ~name="focus_exp",
+        ~name="workspaceFocus_exp",
         ~nodes=[vizExp(e)],
         ~render=([e]) => Theia.noOp(e, []),
         (),
@@ -265,7 +256,7 @@ let vizFocus = (f: focus) =>
   | PreVal(pv) =>
     Some(
       ConfigIR.mk(
-        ~name="focus_preval",
+        ~name="workspaceFocus_preval",
         ~nodes=[vizPreVal(pv)],
         ~render=([pv]) => Theia.noOp(pv, []),
         (),
@@ -274,7 +265,7 @@ let vizFocus = (f: focus) =>
   | Value(v) =>
     Some(
       ConfigIR.mk(
-        ~name="focus_value",
+        ~name="workspaceFocus_value",
         ~nodes=[vizValue(v)],
         ~render=([v]) => Theia.noOp(v, []),
         (),
@@ -282,11 +273,11 @@ let vizFocus = (f: focus) =>
     )
   };
 
-let vizWorkspaceZipper = ({focus, op_ctxts}: workspaceZipper) =>
+let vizWorkspaceZipper = ({workspaceFocus, op_ctxts}: workspaceZipper) =>
   Some(
     ConfigIR.mk(
       ~name="workspaceZipper",
-      ~nodes=[vizFocus(focus), vizOpCtxts(op_ctxts)],
+      ~nodes=[vizWorkspaceFocus(workspaceFocus), vizOpCtxts(op_ctxts)],
       ~render=Theia.hSeq,
       (),
     ),

@@ -151,13 +151,15 @@ type preval = op_preval;
 /* None -> VNone*/
 /* False -> VBool(false) */
 
-type focus =
+type workspaceFocus =
   | Empty
-  | Program(program)
-  | Stmt(stmt)
   | Exp(exp)
   | PreVal(preval)
   | Value(value);
+
+type programFocus =
+  | Program(program)
+  | Stmt(stmt);
 
 type op_ctxts = list(op_ctxt);
 type prog_ctxts = list(prog_ctxt);
@@ -166,12 +168,12 @@ type prog_ctxts = list(prog_ctxt);
 
 /* for now only used for expressions, but maybe more in the future, so calling it workspace */
 type workspaceZipper = {
-  focus,
+  workspaceFocus,
   op_ctxts,
 };
 
 type programZipper = {
-  focus,
+  programFocus,
   prog_ctxts,
 };
 
@@ -189,7 +191,7 @@ let step = (c: config): option(config) =>
   /* zipper begin - UnaryExpr */
   | {
       programZipper,
-      workspaceZipper: {focus: Exp(UnaryExpr({op, args: [a]})), op_ctxts},
+      workspaceZipper: {workspaceFocus: Exp(UnaryExpr({op, args: [a]})), op_ctxts},
       env,
       store,
       glob,
@@ -197,7 +199,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Exp(a),
+        workspaceFocus: Exp(a),
         op_ctxts: [{op, args: [], values: []}, ...op_ctxts],
       },
       env,
@@ -207,7 +209,7 @@ let step = (c: config): option(config) =>
   /* zipper begin - BinaryExpr */
   | {
       programZipper,
-      workspaceZipper: {focus: Exp(BinaryExpr({op, args: [a1, a2]})), op_ctxts},
+      workspaceZipper: {workspaceFocus: Exp(BinaryExpr({op, args: [a1, a2]})), op_ctxts},
       env,
       store,
       glob,
@@ -215,7 +217,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Exp(a1),
+        workspaceFocus: Exp(a1),
         op_ctxts: [{op, args: [a2], values: []}, ...op_ctxts],
       },
       env,
@@ -226,7 +228,7 @@ let step = (c: config): option(config) =>
   | {
       programZipper,
       workspaceZipper: {
-        focus: Value(v),
+        workspaceFocus: Value(v),
         op_ctxts: [{op, args: [a, ...args], values}, ...op_ctxts],
       },
       env,
@@ -236,7 +238,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Exp(a),
+        workspaceFocus: Exp(a),
         op_ctxts: [{op, args, values: [v, ...values]}, ...op_ctxts],
       },
       env,
@@ -246,7 +248,10 @@ let step = (c: config): option(config) =>
   /* zipper end - op_expr */
   | {
       programZipper,
-      workspaceZipper: {focus: Value(v), op_ctxts: [{op, args: [], values}, ...op_ctxts]},
+      workspaceZipper: {
+        workspaceFocus: Value(v),
+        op_ctxts: [{op, args: [], values}, ...op_ctxts],
+      },
       env,
       store,
       glob,
@@ -254,7 +259,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: PreVal({op, values: List.rev([v, ...values])}), /* we reverse the values, since they were pushed in reverse order */
+        workspaceFocus: PreVal({op, values: List.rev([v, ...values])}), /* we reverse the values, since they were pushed in reverse order */
         op_ctxts,
       },
       env,
@@ -265,7 +270,7 @@ let step = (c: config): option(config) =>
   // /* zipper begin - Stmt */
   // | {
   //     programZipper,
-  //     workspaceZipper: {focus: Stmt({op, args: [a, ...args]}), op_ctxts},
+  //     workspaceZipper: {workspaceFocus: Stmt({op, args: [a, ...args]}), op_ctxts},
   //     env,
   //     store,
   //     glob,
@@ -273,7 +278,7 @@ let step = (c: config): option(config) =>
   //   Some({
   //     programZipper,
   //     workspaceZipper: {
-  //       focus: Exp(a),
+  //       workspaceFocus: Exp(a),
   //       op_ctxts: [Stmt({op, args, values: []}), ...op_ctxts],
   //     },
   //     env,
@@ -284,7 +289,7 @@ let step = (c: config): option(config) =>
   // | {
   //     programZipper,
   //     workspaceZipper: {
-  //       focus: Value(v),
+  //       workspaceFocus: Value(v),
   //       op_ctxts: [Stmt({op, args: [a, ...args], values}), ...op_ctxts],
   //     },
   //     env,
@@ -294,7 +299,7 @@ let step = (c: config): option(config) =>
   //   Some({
   //     programZipper,
   //     workspaceZipper: {
-  //       focus: Exp(a),
+  //       workspaceFocus: Exp(a),
   //       op_ctxts: [Stmt({op, args, values: [v, ...values]}), ...op_ctxts],
   //     },
   //     env,
@@ -304,7 +309,7 @@ let step = (c: config): option(config) =>
   // /* zipper end - Stmt */
   // | {
   //     programZipper,
-  //     workspaceZipper: {focus: Value(v), op_ctxts: [Stmt({op, args: [], values}), ...op_ctxts]},
+  //     workspaceZipper: {workspaceFocus: Value(v), op_ctxts: [Stmt({op, args: [], values}), ...op_ctxts]},
   //     env,
   //     store,
   //     glob,
@@ -312,7 +317,7 @@ let step = (c: config): option(config) =>
   //   Some({
   //     programZipper,
   //     workspaceZipper: {
-  //       focus: PreVal({op, values: List.rev([v, ...values])}), /* we reverse the values, since they were pushed in reverse order */
+  //       workspaceFocus: PreVal({op, values: List.rev([v, ...values])}), /* we reverse the values, since they were pushed in reverse order */
   //       op_ctxts,
   //     },
   //     env,
@@ -322,11 +327,17 @@ let step = (c: config): option(config) =>
 
   /* ChocoPy rules */
   /* NONE */
-  | {programZipper, workspaceZipper: {focus: Exp(NoneLiteral), op_ctxts}, env, store, glob} =>
+  | {
+      programZipper,
+      workspaceZipper: {workspaceFocus: Exp(NoneLiteral), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Value(VNone),
+        workspaceFocus: Value(VNone),
         op_ctxts,
       },
       env,
@@ -336,7 +347,7 @@ let step = (c: config): option(config) =>
   /* BOOL-TRUE and BOOL-FALSE */
   | {
       programZipper,
-      workspaceZipper: {focus: Exp(BooleanLiteral(bool)), op_ctxts},
+      workspaceZipper: {workspaceFocus: Exp(BooleanLiteral(bool)), op_ctxts},
       env,
       store,
       glob,
@@ -344,7 +355,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Value(VBool(bool)),
+        workspaceFocus: Value(VBool(bool)),
         op_ctxts,
       },
       env,
@@ -354,7 +365,7 @@ let step = (c: config): option(config) =>
   /* INT */
   | {
       programZipper,
-      workspaceZipper: {focus: Exp(IntegerLiteral(int)), op_ctxts},
+      workspaceZipper: {workspaceFocus: Exp(IntegerLiteral(int)), op_ctxts},
       env,
       store,
       glob,
@@ -362,7 +373,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Value(VInt(int)),
+        workspaceFocus: Value(VInt(int)),
         op_ctxts,
       },
       env,
@@ -372,7 +383,7 @@ let step = (c: config): option(config) =>
   /* STR */
   | {
       programZipper,
-      workspaceZipper: {focus: Exp(StringLiteral(string)), op_ctxts},
+      workspaceZipper: {workspaceFocus: Exp(StringLiteral(string)), op_ctxts},
       env,
       store,
       glob,
@@ -380,7 +391,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Value(VString(String.length(string), string)),
+        workspaceFocus: Value(VString(String.length(string), string)),
         op_ctxts,
       },
       env,
@@ -390,7 +401,7 @@ let step = (c: config): option(config) =>
   /* EXPR-STMT */
   | {
       programZipper,
-      workspaceZipper: {focus: PreVal({op: Stmt(ExprStmt), values: [_v]}), op_ctxts},
+      workspaceZipper: {workspaceFocus: PreVal({op: Stmt(ExprStmt), values: [_v]}), op_ctxts},
       env,
       store,
       glob,
@@ -398,7 +409,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Empty,
+        workspaceFocus: Empty,
         op_ctxts,
       },
       env,
@@ -408,7 +419,7 @@ let step = (c: config): option(config) =>
   /* NEGATE */
   | {
       programZipper,
-      workspaceZipper: {focus: PreVal({op: Unary(Neg), values: [VInt(i1)]}), op_ctxts},
+      workspaceZipper: {workspaceFocus: PreVal({op: Unary(Neg), values: [VInt(i1)]}), op_ctxts},
       env,
       store,
       glob,
@@ -416,7 +427,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Value(VInt(- i1)),
+        workspaceFocus: Value(VInt(- i1)),
         op_ctxts,
       },
       env,
@@ -427,7 +438,7 @@ let step = (c: config): option(config) =>
   | {
       programZipper,
       workspaceZipper: {
-        focus: PreVal({op: Binary(Add), values: [VInt(i1), VInt(i2)]}),
+        workspaceFocus: PreVal({op: Binary(Add), values: [VInt(i1), VInt(i2)]}),
         op_ctxts,
       },
       env,
@@ -437,7 +448,7 @@ let step = (c: config): option(config) =>
     Some({
       programZipper,
       workspaceZipper: {
-        focus: Value(VInt(i1 + i2)),
+        workspaceFocus: Value(VInt(i1 + i2)),
         op_ctxts,
       },
       env,
@@ -449,11 +460,11 @@ let step = (c: config): option(config) =>
 
 let inject = (e: exp): config => {
   programZipper: {
-    focus: Empty,
+    programFocus: Stmt({op: Stmt(ExprStmt), args: [e]}),
     prog_ctxts: [],
   },
   workspaceZipper: {
-    focus: Exp(e),
+    workspaceFocus: Exp(e),
     op_ctxts: [],
   },
   env: [],
@@ -467,7 +478,7 @@ let inject = (e: exp): config => {
 
 /* let isFinal = (c: config): bool =>
    switch (c) {
-   | {zipper: {focus: Value(_), op_ctxts: []}, env: _, stack: []} => true
+   | {zipper: {workspaceFocus: Value(_), op_ctxts: []}, env: _, stack: []} => true
    | _ => false
    }; */
 let isFinal = (c: config): bool => false;
