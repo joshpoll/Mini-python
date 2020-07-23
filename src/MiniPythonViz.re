@@ -228,43 +228,6 @@ let rec vizOpCtxts = (op_ctxts: op_ctxts) =>
     )
   };
 
-let vizCtxt = (c: ctxt) =>
-  switch (c) {
-  | OpCtxt(oc) =>
-    Some(
-      ConfigIR.mk(
-        ~name="OpCtxt",
-        ~nodes=[vizOpCtxt(oc)],
-        ~render=([oc]) => Theia.noOp(oc, []),
-        (),
-      ),
-    )
-  | Program(pc) => failwith("TODO")
-  | Stmt(sc) =>
-    Some(
-      ConfigIR.mk(
-        ~name="StmtCtxt",
-        ~nodes=[vizOpCtxt(sc)],
-        ~render=([sc]) => Theia.noOp(sc, []),
-        (),
-      ),
-    )
-  };
-
-let rec vizCtxts = (ctxts: ctxts) =>
-  switch (ctxts) {
-  | [] => Some(ConfigIR.mk(~name="ctxts_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
-  | [c, ...ctxts] =>
-    Some(
-      ConfigIR.mk(
-        ~name="ctxts_cons",
-        ~nodes=[vizCtxt(c), vizCtxts(ctxts)],
-        ~render=Theia.vSeq,
-        (),
-      ),
-    )
-  };
-
 let vizOpPreval = ({op, values}: op_preval) =>
   Some(
     ConfigIR.mk(

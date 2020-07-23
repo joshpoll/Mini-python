@@ -103,6 +103,22 @@ type stmts = list(stmt);
 type program = {stmts};
 
 /* ctxts */
+type stmt_ctxt = {
+  stmt_op,
+  pre: list(exp),
+  post: list(exp),
+};
+
+type stmts_ctxt = {
+  pre: list(stmt),
+  post: list(stmt),
+};
+
+type prog_ctxt = {
+  pre: list(stmt),
+  post: list(stmt),
+};
+
 type op_ctxt = {
   op,
   args: list(exp),
@@ -114,12 +130,11 @@ type unary_ctxt = op_ctxt;
 type binary_ctxt = op_ctxt;
 
 type program_ctxt = unit;
-type stmt_ctxt = op_ctxt;
 
-type ctxt =
-  | OpCtxt(op_ctxt)
-  | Program(program_ctxt)
-  | Stmt(stmt_ctxt);
+// type ctxt =
+//   | OpCtxt(op_ctxt)
+//   | Program(program_ctxt)
+//   | Stmt(stmt_ctxt);
 
 /* preval */
 type op_preval = {
@@ -145,8 +160,9 @@ type focus =
   | Value(value);
 
 type op_ctxts = list(op_ctxt);
+type prog_ctxts = list(prog_ctxt);
 
-type ctxts = list(ctxt);
+// type ctxts = list(ctxt);
 
 /* for now only used for expressions, but maybe more in the future, so calling it workspace */
 type workspaceZipper = {
@@ -156,7 +172,7 @@ type workspaceZipper = {
 
 type programZipper = {
   focus,
-  ctxts,
+  prog_ctxts,
 };
 
 type config = {
@@ -434,7 +450,7 @@ let step = (c: config): option(config) =>
 let inject = (e: exp): config => {
   programZipper: {
     focus: Empty,
-    ctxts: [],
+    prog_ctxts: [],
   },
   workspaceZipper: {
     focus: Exp(e),
