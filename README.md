@@ -60,61 +60,77 @@ To serve the files, this template uses a minimal dependency called `moduleserve`
 
 By the way, ReasonReact comes with a small [router](https://reasonml.github.io/reason-react/docs/en/router) you might be interested in.
 
-# ChocoPy Rules 
+# ChocoPy Rules
 
-- [x] NONE
-- [x] BOOL-FALSE
-- [x] BOOL-TRUE
-- [x] INT
-- [x] STR
-- [ ] PASS
-- [x] EXPR-STMT
-- [ ] VAR-READ
-- [ ] VAR-ASSIGN-STMT
-- [x] NEGATE
-- [ ] ARITH
-- [ ] INT-COMPARE
-- [ ] BOOL-COMPARE
-- [ ] STR-COMPARE
-- [ ] STR-CONCAT
-- [ ] STR-SELECT
-- [ ] IS
-- [ ] NOT
-- [ ] AND-1
-- [ ] AND-2
-- [ ] OR-1
-- [ ] OR-2
+**Goal: Implement through Stage 5 by August 11.**
+
+## Stage 1
+- [x] NONE (Grace)
+- [x] BOOL-FALSE (Grace)
+- [x] BOOL-TRUE (Grace)
+- [x] INT (Grace)
+- [x] STR (Grace)
+
+## Stage 2
+- [ ] PASS (Josh)
+- [x] EXPR-STMT (Josh)
+- [ ] VAR-READ (Josh)
+- [ ] VAR-ASSIGN-STMT (Josh)
+- [x] NEGATE (Josh)
+- [ ] ARITH (Grace)
+- [ ] INT-COMPARE (Grace)
+- [ ] BOOL-COMPARE (Grace)
+- [ ] STR-COMPARE (Grace)
+- [ ] STR-CONCAT (Grace)
+- [ ] STR-SELECT (Grace)
+- [ ] IS (??)
+- [ ] NOT (Grace)
+
+## Stage 3: Boolean Expressions
+- [ ] AND-1 (Josh)
+- [ ] AND-2 (Josh)
+- [ ] OR-1 (Grace)
+- [ ] OR-2 (Grace)
+- [ ] IF-ELSE-EXPR-TRUE (??)
+- [ ] IF-ELSE-EXPR-FALSE (??)
+
+## Stage 4: If Statements, While Loops, and I/O
 - [ ] IF-ELSE-TRUE
 - [ ] IF-ELSE-FALSE
 - [ ] IF-ELIF-TRUE
 - [ ] IF-ELIF-FALSE
 - [ ] IF-NO-ELSE
-- [ ] IF-ELSE-EXPR-TRUE
-- [ ] IF-ELSE-EXPR-FALSE
 - [ ] WHILE-FALSE
 - [ ] WHILE-TRUE-LOOP
+- [ ] PRINT
+- [ ] INPUT
+
+## Stage 5: Functions
+- [ ] FUNC-METHOD-DEF
+- [ ] INVOKE
 - [ ] WHILE-TRUE-RETURN
 - [ ] RETURN-E
 - [ ] RETURN
 - [ ] STMT-SEQ
 - [ ] STMT-SEQ-RETURN
-- [ ] INVOKE
+- [ ] PROGRAM
+
+## Stage 6: Objects
+- [ ] class pre-processing? Chocopy creates classes at compile time I think...
 - [ ] DISPATCH
-- [ ] FUNC-METHOD-DEF
 - [ ] ATTR-READ
 - [ ] ATTR-ASSIGN-STMT
 - [ ] NEW
+
+## Stage 7: Lists and For Loops
 - [ ] LIST-DISPLAY
 - [ ] LIST-SELECT
 - [ ] LIST-CONCAT
 - [ ] LIST-ASSIGN-STMT
 - [ ] MULTI-ASSIGN-STMT
-- [ ] PRINT
-- [ ] INPUT
 - [ ] LEN-LIST
 - [ ] LEN-STR
 - [ ] FOR-LIST
 - [ ] FOR-LIST-RETURN
 - [ ] FOR-STR
 - [ ] FOR-STR-RETURN
-- [ ] PROGRAM
