@@ -111,3 +111,24 @@ ReactDOMRe.render(
   />,
   makeContainer("ARITH: +"),
 );
+
+/* multiple statements */
+ReactDOMRe.render(
+  <VizTrace
+    program=MiniPython.{
+      stmts: [
+        {
+          op: Stmt(ExprStmt),
+          args: [UnaryExpr({op: Unary(Neg), args: [IntegerLiteral(1)]})],
+        },
+        {
+          op: Stmt(ExprStmt),
+          args: [
+            BinaryExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(2)]}),
+          ],
+        },
+      ],
+    }
+  />,
+  makeContainer("multiple statements"),
+);
