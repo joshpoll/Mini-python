@@ -70,6 +70,7 @@ type binary_op =
   | Add;
 
 type stmt_op =
+  | Pass
   | ExprStmt;
 
 /* TODO: feels like this should be a GADT */
@@ -388,6 +389,27 @@ let step = (c: config): option(config) =>
       workspaceZipper: {
         workspaceFocus: Value(VString(String.length(string), string)),
         op_ctxts,
+      },
+      env,
+      store,
+      glob,
+    })
+  /* PASS */
+  | {
+      programZipper: {programFocus: Stmt({op: Stmt(Pass), args: []}), prog_ctxts},
+      workspaceZipper: {workspaceFocus: Value(_v), op_ctxts: []},
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      programZipper: {
+        programFocus: PostStmt({op: Stmt(Pass), args: []}),
+        prog_ctxts,
+      },
+      workspaceZipper: {
+        workspaceFocus: Empty,
+        op_ctxts: [],
       },
       env,
       store,

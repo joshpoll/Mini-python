@@ -72,7 +72,7 @@ By the way, ReasonReact comes with a small [router](https://reasonml.github.io/r
 - [x] STR (Grace)
 
 ## Stage 2
-- [ ] PASS (Josh)
+- [x] PASS (Josh)
 - [x] EXPR-STMT (Josh)
 - [ ] VAR-READ (Josh)
 - [ ] VAR-ASSIGN-STMT (Josh)

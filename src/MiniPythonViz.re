@@ -44,6 +44,7 @@ let vizBinaryOp = (bo: binary_op) =>
 
 let vizStmtOp = (so: stmt_op) =>
   switch (so) {
+  | Pass => Some(ConfigIR.mk(~name="Pass", ~nodes=[], ~render=_ => Theia.str("pass"), ()))
   | ExprStmt =>
     Some(
       ConfigIR.mk(~name="ExprStmt", ~nodes=[None], ~render=([e]) => Theia.noOp(e, []), ()),

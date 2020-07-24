@@ -132,3 +132,9 @@ ReactDOMRe.render(
   />,
   makeContainer("multiple statements"),
 );
+
+/* PASS */
+ReactDOMRe.render(
+  <VizTrace program=MiniPython.{stmts: [{op: Stmt(Pass), args: []}]} />,
+  makeContainer("PASS"),
+);
