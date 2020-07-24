@@ -114,11 +114,6 @@ type stmts_ctxt = {
   post: list(stmt),
 };
 
-type prog_ctxt = {
-  pre: list(stmt),
-  post: list(stmt),
-};
-
 type op_ctxt = {
   op,
   args: list(exp),
@@ -129,12 +124,8 @@ type unary_ctxt = op_ctxt;
 
 type binary_ctxt = op_ctxt;
 
-type program_ctxt = unit;
-
-// type ctxt =
-//   | OpCtxt(op_ctxt)
-//   | Program(program_ctxt)
-//   | Stmt(stmt_ctxt);
+type prog_ctxt =
+  | StmtCtxt(op_ctxt);
 
 /* preval */
 type op_preval = {
@@ -159,7 +150,8 @@ type workspaceFocus =
 
 type programFocus =
   | Program(program)
-  | Stmt(stmt);
+  | Stmt(stmt)
+  | Exp(exp);
 
 type op_ctxts = list(op_ctxt);
 type prog_ctxts = list(prog_ctxt);
@@ -399,18 +391,64 @@ let step = (c: config): option(config) =>
       glob,
     })
   /* EXPR-STMT */
+  /* zipper enter */
   | {
-      programZipper,
-      workspaceZipper: {workspaceFocus: PreVal({op: Stmt(ExprStmt), values: [_v]}), op_ctxts},
+      programZipper: {programFocus: Stmt({op: Stmt(ExprStmt), args: [e]}), prog_ctxts},
+      workspaceZipper,
       env,
       store,
       glob,
     } =>
     Some({
-      programZipper,
+      programZipper: {
+        programFocus: Exp(e),
+        prog_ctxts: [StmtCtxt({op: Stmt(ExprStmt), args: [], values: []}), ...prog_ctxts],
+      },
+      workspaceZipper,
+      env,
+      store,
+      glob,
+    })
+  /* workspace enter. not specific to ExprStmt!!! */
+  | {
+      programZipper: {programFocus: Exp(e), prog_ctxts},
+      workspaceZipper: {workspaceFocus: Empty, op_ctxts: []},
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      programZipper: {
+        programFocus: Exp(e),
+        prog_ctxts,
+      },
+      workspaceZipper: {
+        workspaceFocus: Exp(e),
+        op_ctxts: [],
+      },
+      env,
+      store,
+      glob,
+    })
+  /* workspace exit */
+  | {
+      programZipper: {
+        programFocus: Exp(e),
+        prog_ctxts: [StmtCtxt({op: Stmt(ExprStmt), args: [], values: []}), ...prog_ctxts],
+      },
+      workspaceZipper: {workspaceFocus: Value(_v), op_ctxts: []},
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      programZipper: {
+        programFocus: Program({stmts: []}),
+        prog_ctxts: [],
+      },
       workspaceZipper: {
         workspaceFocus: Empty,
-        op_ctxts,
+        op_ctxts: [],
       },
       env,
       store,
@@ -464,7 +502,7 @@ let inject = (e: exp): config => {
     prog_ctxts: [],
   },
   workspaceZipper: {
-    workspaceFocus: Exp(e),
+    workspaceFocus: Empty,
     op_ctxts: [],
   },
   env: [],

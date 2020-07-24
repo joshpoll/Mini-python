@@ -204,7 +204,17 @@ let rec vizStmts = (stmts: list(stmt)) =>
     )
   };
 
-let vizOpCtxt = ({op, args, values}: unary_ctxt) =>
+let vizProgram = ({stmts}: program) =>
+  Some(
+    ConfigIR.mk(
+      ~name="program",
+      ~nodes=[vizStmts(stmts)],
+      ~render=([s]) => Theia.noOp(s, []),
+      (),
+    ),
+  );
+
+let vizOpCtxt = ({op, args, values}: op_ctxt) =>
   Some(
     ConfigIR.mk(
       ~name="op_ctxt",
@@ -222,6 +232,33 @@ let rec vizOpCtxts = (op_ctxts: op_ctxts) =>
       ConfigIR.mk(
         ~name="op_ctxts_cons",
         ~nodes=[vizOpCtxt(oc), vizOpCtxts(op_ctxts)],
+        ~render=Theia.vSeq,
+        (),
+      ),
+    )
+  };
+
+let vizProgCtxt = (pc: prog_ctxt) =>
+  switch (pc) {
+  | StmtCtxt(oc) =>
+    Some(
+      ConfigIR.mk(
+        ~name="prog_ctxt",
+        ~nodes=[vizOpCtxt(oc)],
+        ~render=([oc]) => Theia.noOp(oc, []),
+        (),
+      ),
+    )
+  };
+
+let rec vizProgCtxts = (prog_ctxts: prog_ctxts) =>
+  switch (prog_ctxts) {
+  | [] => Some(ConfigIR.mk(~name="prog_ctxts_empty", ~nodes=[], ~render=_ => Theia.hole(), ()))
+  | [pc, ...prog_ctxts] =>
+    Some(
+      ConfigIR.mk(
+        ~name="prog_ctxts_cons",
+        ~nodes=[vizProgCtxt(pc), vizProgCtxts(prog_ctxts)],
         ~render=Theia.vSeq,
         (),
       ),
@@ -273,6 +310,37 @@ let vizWorkspaceFocus = (wf: workspaceFocus) =>
     )
   };
 
+let vizProgramFocus = (pf: programFocus) =>
+  switch (pf) {
+  | Program(p) =>
+    Some(
+      ConfigIR.mk(
+        ~name="programFocus_program",
+        ~nodes=[vizProgram(p)],
+        ~render=([p]) => Theia.noOp(p, []),
+        (),
+      ),
+    )
+  | Stmt(s) =>
+    Some(
+      ConfigIR.mk(
+        ~name="programFocus_stmt",
+        ~nodes=[vizStmt(s)],
+        ~render=([s]) => Theia.noOp(s, []),
+        (),
+      ),
+    )
+  | Exp(e) =>
+    Some(
+      ConfigIR.mk(
+        ~name="programFocus_exp",
+        ~nodes=[vizExp(e)],
+        ~render=([e]) => Theia.noOp(e, []),
+        (),
+      ),
+    )
+  };
+
 let vizWorkspaceZipper = ({workspaceFocus, op_ctxts}: workspaceZipper) =>
   Some(
     ConfigIR.mk(
@@ -283,10 +351,25 @@ let vizWorkspaceZipper = ({workspaceFocus, op_ctxts}: workspaceZipper) =>
     ),
   );
 
-let vizConfig = ({workspaceZipper, env, store, glob}: config) =>
+let vizProgramZipper = ({programFocus, prog_ctxts}: programZipper) =>
+  Some(
+    ConfigIR.mk(
+      ~name="programZipper",
+      ~nodes=[vizProgramFocus(programFocus), vizProgCtxts(prog_ctxts)],
+      ~render=Theia.hSeq,
+      (),
+    ),
+  );
+
+let vizConfig = ({programZipper, workspaceZipper, env, store, glob}: config) =>
   ConfigIR.mk(
     ~name="config",
-    ~nodes=[vizWorkspaceZipper(workspaceZipper)],
-    ~render=([z]) => Theia.noOp(z, []),
+    ~nodes=[vizProgramZipper(programZipper), vizWorkspaceZipper(workspaceZipper)],
+    ~render=
+      ([pz, wz]) =>
+        Theia.hSeq(
+          ~gap=20.,
+          [Theia.box(~dx=10., ~dy=10., pz, []), Theia.box(~dx=10., ~dy=10., wz, [])],
+        ),
     (),
   );
