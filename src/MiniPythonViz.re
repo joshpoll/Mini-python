@@ -249,6 +249,15 @@ let vizProgCtxt = (pc: prog_ctxt) =>
         (),
       ),
     )
+  | StmtsCtxt({pre, post}) =>
+    Some(
+      ConfigIR.mk(
+        ~name="prog_ctxt",
+        ~nodes=[vizStmts(pre), None, vizStmts(post)],
+        ~render=Theia.vSeq,
+        (),
+      ),
+    )
   };
 
 let rec vizProgCtxts = (prog_ctxts: prog_ctxts) =>
@@ -325,6 +334,15 @@ let vizProgramFocus = (pf: programFocus) =>
     Some(
       ConfigIR.mk(
         ~name="programFocus_stmt",
+        ~nodes=[vizStmt(s)],
+        ~render=([s]) => Theia.noOp(s, []),
+        (),
+      ),
+    )
+  | PostStmt(s) =>
+    Some(
+      ConfigIR.mk(
+        ~name="programFocus_postStmt",
         ~nodes=[vizStmt(s)],
         ~render=([s]) => Theia.noOp(s, []),
         (),

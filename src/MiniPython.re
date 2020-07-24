@@ -125,7 +125,8 @@ type unary_ctxt = op_ctxt;
 type binary_ctxt = op_ctxt;
 
 type prog_ctxt =
-  | StmtCtxt(op_ctxt);
+  | StmtCtxt(op_ctxt)
+  | StmtsCtxt(stmts_ctxt);
 
 /* preval */
 type op_preval = {
@@ -151,6 +152,8 @@ type workspaceFocus =
 type programFocus =
   | Program(program)
   | Stmt(stmt)
+  /* state after stmt has executed, before control moves on */
+  | PostStmt(stmt)
   | Exp(exp);
 
 type op_ctxts = list(op_ctxt);
@@ -391,7 +394,7 @@ let step = (c: config): option(config) =>
       glob,
     })
   /* EXPR-STMT */
-  /* zipper enter */
+  /* zipper enter. boilerplate for zipper */
   | {
       programZipper: {programFocus: Stmt({op: Stmt(ExprStmt), args: [e]}), prog_ctxts},
       workspaceZipper,
@@ -430,7 +433,7 @@ let step = (c: config): option(config) =>
       store,
       glob,
     })
-  /* workspace exit */
+  /* workspace exit. the actual rule */
   | {
       programZipper: {
         programFocus: Exp(e),
@@ -443,8 +446,8 @@ let step = (c: config): option(config) =>
     } =>
     Some({
       programZipper: {
-        programFocus: Program({stmts: []}),
-        prog_ctxts: [],
+        programFocus: PostStmt({op: Stmt(ExprStmt), args: [e]}),
+        prog_ctxts,
       },
       workspaceZipper: {
         workspaceFocus: Empty,
@@ -493,12 +496,55 @@ let step = (c: config): option(config) =>
       store,
       glob,
     })
+  /* PROGRAM */
+  /* enter. zipper boilerplate */
+  | {
+      programZipper: {programFocus: Program({stmts: [s, ...stmts]}), prog_ctxts: []},
+      workspaceZipper,
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      programZipper: {
+        programFocus: Stmt(s),
+        prog_ctxts: [StmtsCtxt({pre: stmts, post: []})],
+      },
+      workspaceZipper,
+      env,
+      store,
+      glob,
+    })
+  /* continue. zipper boilerplate */
+  | {
+      programZipper: {
+        programFocus: PostStmt(s),
+        prog_ctxts: [StmtsCtxt({pre: [s', ...pre], post})],
+      },
+      workspaceZipper,
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      programZipper: {
+        programFocus: Stmt(s'),
+        prog_ctxts: [StmtsCtxt({pre, post: [s, ...post]})],
+      },
+      workspaceZipper,
+      env,
+      store,
+      glob,
+    })
+  /* TODO: end? */
   | _ => None
   };
 
-let inject = (e: exp): config => {
+let liftExpr = (e: exp): program => {stmts: [{op: Stmt(ExprStmt), args: [e]}]};
+
+let inject = (p: program): config => {
   programZipper: {
-    programFocus: Stmt({op: Stmt(ExprStmt), args: [e]}),
+    programFocus: Program(p),
     prog_ctxts: [],
   },
   workspaceZipper: {
@@ -546,7 +592,7 @@ let rec takeWhileInclusive = (p, l: list('a)): list('a) =>
 
 let iterateMaybe = (f: 'a => option('a), x: 'a): list('a) => iterateMaybeAux(f, Some(x));
 
-let interpretTrace = (p: exp): list(config) => {
+let interpretTrace = (p: program): list(config) => {
   let states = iterateMaybe(step, inject(p));
   /* takeWhileInclusive(c => !isFinal(c), states) */
   states;
