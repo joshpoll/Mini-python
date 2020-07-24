@@ -62,30 +62,59 @@ By the way, ReasonReact comes with a small [router](https://reasonml.github.io/r
 
 # ChocoPy Rules 
 
-- [ ] Class Instances 
-- [ ] List objects 
-- [ ] None
-- [ ] Functions 
-- [ ] Operational Rules
-- [ ] Literals 
-- [ ] Pass statements 
-- [ ] Expression Statements 
-- [ ] Variable Accesses 
-- [ ] Numerical Operations 
-- [ ] String Operations
-- [ ] Object Identity 
-- [ ] Logical Operators 
-- [ ] Conditional Statements and Expressions
-- [ ] While Loops
-- [ ] Return Statements
-- [ ] Statement Sequences 
-- [ ] Function Invocation 
-- [ ] Function Definitions 
-- [ ] Object Instantiation 
-- [ ] List Displays
-- [ ] Operations on Lists
-- [ ] Multiple Assignment
-- [ ] Predefined Functions
-- [ ] For Loops
-- [ ] Programs 
-
+- [x] NONE
+- [x] BOOL-FALSE
+- [x] BOOL-TRUE
+- [x] INT
+- [x] STR
+- [ ] PASS
+- [x] EXPR-STMT
+- [ ] VAR-READ
+- [ ] VAR-ASSIGN-STMT
+- [x] NEGATE
+- [ ] ARITH
+- [ ] INT-COMPARE
+- [ ] BOOL-COMPARE
+- [ ] STR-COMPARE
+- [ ] STR-CONCAT
+- [ ] STR-SELECT
+- [ ] IS
+- [ ] NOT
+- [ ] AND-1
+- [ ] AND-2
+- [ ] OR-1
+- [ ] OR-2
+- [ ] IF-ELSE-TRUE
+- [ ] IF-ELSE-FALSE
+- [ ] IF-ELIF-TRUE
+- [ ] IF-ELIF-FALSE
+- [ ] IF-NO-ELSE
+- [ ] IF-ELSE-EXPR-TRUE
+- [ ] IF-ELSE-EXPR-FALSE
+- [ ] WHILE-FALSE
+- [ ] WHILE-TRUE-LOOP
+- [ ] WHILE-TRUE-RETURN
+- [ ] RETURN-E
+- [ ] RETURN
+- [ ] STMT-SEQ
+- [ ] STMT-SEQ-RETURN
+- [ ] INVOKE
+- [ ] DISPATCH
+- [ ] FUNC-METHOD-DEF
+- [ ] ATTR-READ
+- [ ] ATTR-ASSIGN-STMT
+- [ ] NEW
+- [ ] LIST-DISPLAY
+- [ ] LIST-SELECT
+- [ ] LIST-CONCAT
+- [ ] LIST-ASSIGN-STMT
+- [ ] MULTI-ASSIGN-STMT
+- [ ] PRINT
+- [ ] INPUT
+- [ ] LEN-LIST
+- [ ] LEN-STR
+- [ ] FOR-LIST
+- [ ] FOR-LIST-RETURN
+- [ ] FOR-STR
+- [ ] FOR-STR-RETURN
+- [ ] PROGRAM
