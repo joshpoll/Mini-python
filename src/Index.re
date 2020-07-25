@@ -138,3 +138,18 @@ ReactDOMRe.render(
   <VizTrace program=MiniPython.{stmts: [{op: Stmt(Pass), args: []}]} />,
   makeContainer("PASS"),
 );
+
+/* VAR-INIT, VAR-READ, VAR-ASSIGN-STMT */
+ReactDOMRe.render(
+  <VizTrace
+    program=MiniPython.{
+      stmts: [
+        {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(5)]},
+        {op: Stmt(ExprStmt), args: [Identifier("x")]},
+        {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(6)]},
+        {op: Stmt(ExprStmt), args: [Identifier("x")]},
+      ],
+    }
+  />,
+  makeContainer("var"),
+);

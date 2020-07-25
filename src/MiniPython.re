@@ -14,10 +14,18 @@
 
    let my_point_tuple: point_tuple = (5, 6); */
 
-type vid = string;
+type id = string;
+
 type loc = int;
 
-type env = list((vid, loc));
+let counter = ref(0);
+
+let freshLoc = () => {
+  counter := counter^ + 1;
+  counter^ - 1;
+};
+
+type env = list((id, loc));
 
 type value =
   | VNone
@@ -28,41 +36,6 @@ type value =
 type store = list((loc, value));
 type glob = env;
 
-/*
- input: 1 + 1
-
- {
-   "kind" : "Program",
-   "location" : [ 1, 1, 1, 6 ],
-   "declarations" : [ ],
-   "statements" : [ {
-     "kind" : "ExprStmt",
-     "location" : [ 1, 1, 1, 5 ],
-     "expr" : {
-       "kind" : "BinaryExpr",
-       "location" : [ 1, 1, 1, 5 ],
-       "left" : {
-         "kind" : "VInt",
-         "location" : [ 1, 1, 1, 1 ],
-         "value" : 1
-       },
-       "operator" : "+",
-       "right" : {
-         "kind" : "VInt",
-         "location" : [ 1, 5, 1, 5 ],
-         "value" : 1
-       }
-     }
-   } ],
-   "errors" : {
-     "errors" : [ ],
-     "kind" : "Errors",
-     "location" : [ 0, 0, 0, 0 ]
-   }
- }
-
-  */
-
 type unary_op =
   | Neg;
 
@@ -71,7 +44,8 @@ type binary_op =
 
 type stmt_op =
   | Pass
-  | ExprStmt;
+  | ExprStmt
+  | AssignStmt(id);
 
 /* TODO: feels like this should be a GADT */
 type op =
@@ -86,6 +60,7 @@ type exp =
   | StringLiteral(string)
   | UnaryExpr(unary_expr)
   | BinaryExpr(binary_expr)
+  | Identifier(id)
 
 and op_expr = {
   op,
@@ -479,6 +454,89 @@ let step = (c: config): option(config) =>
       store,
       glob,
     })
+  /* VAR-READ */
+  | {
+      programZipper,
+      workspaceZipper: {workspaceFocus: Exp(Identifier(id)), op_ctxts},
+      env,
+      store,
+      glob,
+    } =>
+    switch (Belt.List.getAssoc(env, id, (==))) {
+    | None => None
+    | Some(l_id) =>
+      switch (Belt.List.getAssoc(store, l_id, (==))) {
+      | None => None
+      | Some(v) =>
+        Some({
+          programZipper,
+          workspaceZipper: {
+            workspaceFocus: Value(v),
+            op_ctxts,
+          },
+          env,
+          store,
+          glob,
+        })
+      }
+    }
+  /* VAR-INIT */
+  /* VAR-ASSIGN-STMT */
+  /* zipper enter. boilerplate for zipper */
+  /* todo: generalize the version above by intersecting with this one! */
+  | {
+      programZipper: {programFocus: Stmt({op: Stmt(AssignStmt(id)), args: [e]}), prog_ctxts},
+      workspaceZipper,
+      env,
+      store,
+      glob,
+    } =>
+    Some({
+      programZipper: {
+        programFocus: Exp(e),
+        prog_ctxts: [
+          StmtCtxt({op: Stmt(AssignStmt(id)), args: [], values: []}),
+          ...prog_ctxts,
+        ],
+      },
+      workspaceZipper,
+      env,
+      store,
+      glob,
+    })
+  | {
+      programZipper: {
+        programFocus: Exp(e),
+        prog_ctxts: [StmtCtxt({op: Stmt(AssignStmt(id)), args: [], values: []}), ...prog_ctxts],
+      },
+      workspaceZipper: {workspaceFocus: Value(v), op_ctxts: []},
+      env,
+      store,
+      glob,
+    } =>
+    let (env, l_id) =
+      switch (Belt.List.getAssoc(env, id, (==))) {
+      | None =>
+        /* VAR-INIT */
+        let l_id = freshLoc();
+        (Belt.List.setAssoc(env, id, l_id, (==)), l_id);
+      | Some(l_id) =>
+        /* VAR-ASSIGN-STMT */
+        (env, l_id)
+      };
+    Some({
+      programZipper: {
+        programFocus: PostStmt({op: Stmt(AssignStmt(id)), args: [e]}),
+        prog_ctxts,
+      },
+      workspaceZipper: {
+        workspaceFocus: Empty,
+        op_ctxts: [],
+      },
+      env,
+      store: Belt.List.setAssoc(store, l_id, v, (==)),
+      glob,
+    });
   /* NEGATE */
   | {
       programZipper,

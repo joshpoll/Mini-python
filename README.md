@@ -74,8 +74,9 @@ By the way, ReasonReact comes with a small [router](https://reasonml.github.io/r
 ## Stage 2
 - [x] PASS (Josh)
 - [x] EXPR-STMT (Josh)
-- [ ] VAR-READ (Josh)
-- [ ] VAR-ASSIGN-STMT (Josh)
+- [x] VAR-READ (Josh)
+- [x] VAR-ASSIGN-STMT (Josh)
+- [x] VAR-INIT (Josh) (not technically a dynamic rule, but we don't type check so we do this at runtime)
 - [x] NEGATE (Josh)
 - [ ] ARITH (Grace)
 - [ ] INT-COMPARE (Grace)

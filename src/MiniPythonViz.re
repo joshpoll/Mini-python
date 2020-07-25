@@ -2,6 +2,12 @@ open Sidewinder;
 open Bobcat;
 open MiniPython;
 
+let vizId = (id: id) =>
+  Some(ConfigIR.mk(~name="id", ~nodes=[], ~render=_ => Theia.str(id), ()));
+
+let vizLoc = (loc: loc) =>
+  Some(ConfigIR.mk(~name="loc", ~nodes=[], ~render=_ => Theia.str(string_of_int(loc)), ()));
+
 let vizUnaryOp = (uo: unary_op) =>
   switch (uo) {
   | Neg =>
@@ -48,6 +54,15 @@ let vizStmtOp = (so: stmt_op) =>
   | ExprStmt =>
     Some(
       ConfigIR.mk(~name="ExprStmt", ~nodes=[None], ~render=([e]) => Theia.noOp(e, []), ()),
+    )
+  | AssignStmt(id) =>
+    Some(
+      ConfigIR.mk(
+        ~name="AssignStmt",
+        ~nodes=[vizId(id), None],
+        ~render=([id, e]) => Theia.hSeq([id, Theia.str("="), e]),
+        (),
+      ),
     )
   };
 
@@ -119,6 +134,15 @@ let rec vizExp = (e: exp) =>
         (),
       ),
     )
+  | Identifier(id) =>
+    Some(
+      ConfigIR.mk(
+        ~name="Identifier",
+        ~nodes=[vizId(id)],
+        ~render=([id]) => Theia.noOp(id, []),
+        (),
+      ),
+    )
   }
 
 and vizExps = (exps: list(exp)) =>
@@ -139,6 +163,30 @@ and vizOpExpr = ({op, args}: unary_expr) =>
   Some(
     ConfigIR.mk(~name="op_expr", ~nodes=[vizOp(op), vizExps(args)], ~render=Theia.hSeq, ()),
   );
+
+let vizEnvBinding = ((id, loc): (id, loc)) =>
+  Some(
+    ConfigIR.mk(
+      ~name="env_binding",
+      ~nodes=[vizId(id), vizLoc(loc)],
+      ~render=([i, l]) => Theia.hSeq([Theia.box(i, []), Theia.box(l, [])]),
+      (),
+    ),
+  );
+
+let rec vizEnv = (env: env) =>
+  switch (env) {
+  | [] => Some(ConfigIR.mk(~name="env_empty", ~nodes=[], ~render=_ => Theia.str("env"), ()))
+  | [b, ...env] =>
+    Some(
+      ConfigIR.mk(
+        ~name="env_bind",
+        ~nodes=[vizEnvBinding(b), vizEnv(env)],
+        ~render=([b, env]) => Theia.vSeq([env, b]),
+        (),
+      ),
+    )
+  };
 
 let vizValue = (v: value) =>
   switch (v) {
@@ -176,6 +224,30 @@ let rec vizValues = (values: list(value)) =>
         ~name="values_cons",
         ~nodes=[vizValue(value), vizValues(values)],
         ~render=Theia.hSeq,
+        (),
+      ),
+    )
+  };
+
+let vizStoreBinding = ((loc, value): (loc, value)) =>
+  Some(
+    ConfigIR.mk(
+      ~name="store_binding",
+      ~nodes=[vizLoc(loc), vizValue(value)],
+      ~render=([l, v]) => Theia.hSeq([Theia.box(l, []), Theia.box(v, [])]),
+      (),
+    ),
+  );
+
+let rec vizStore = (store: store) =>
+  switch (store) {
+  | [] => Some(ConfigIR.mk(~name="store_empty", ~nodes=[], ~render=_ => Theia.str("store"), ()))
+  | [b, ...store] =>
+    Some(
+      ConfigIR.mk(
+        ~name="store_bind",
+        ~nodes=[vizStoreBinding(b), vizStore(store)],
+        ~render=([b, store]) => Theia.vSeq([store, b]),
         (),
       ),
     )
@@ -383,12 +455,17 @@ let vizProgramZipper = ({programFocus, prog_ctxts}: programZipper) =>
 let vizConfig = ({programZipper, workspaceZipper, env, store, glob}: config) =>
   ConfigIR.mk(
     ~name="config",
-    ~nodes=[vizProgramZipper(programZipper), vizWorkspaceZipper(workspaceZipper)],
+    ~nodes=[
+      vizProgramZipper(programZipper),
+      vizWorkspaceZipper(workspaceZipper),
+      vizEnv(env),
+      vizStore(store),
+    ],
     ~render=
-      ([pz, wz]) =>
+      ([pz, wz, e, s]) =>
         Theia.hSeq(
           ~gap=20.,
-          [Theia.box(~dx=10., ~dy=10., pz, []), Theia.box(~dx=10., ~dy=10., wz, [])],
+          [Theia.box(~dx=10., ~dy=10., pz, []), Theia.box(~dx=10., ~dy=10., wz, []), e, s],
         ),
     (),
   );
