@@ -40,7 +40,9 @@ let transform = n =>
   |> MiniPythonTransform.transformOpExpr
   |> MiniPythonTransform.transformOpCtxt
   |> MiniPythonTransform.transformOpPreval
-  |> MiniPythonTransform.transformWorkspaceZipper;
+  |> MiniPythonTransform.transformWorkspaceZipper
+  |> MiniPythonTransform.transformProgCtxt
+  |> MiniPythonTransform.transformProgramZipper;
 
 // |> ZEDTransform.transformContinuation;
 

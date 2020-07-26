@@ -169,7 +169,9 @@ let vizEnvBinding = ((id, loc): (id, loc)) =>
     ConfigIR.mk(
       ~name="env_binding",
       ~nodes=[vizId(id), vizLoc(loc)],
-      ~render=([i, l]) => Theia.hSeq([Theia.box(i, []), Theia.box(l, [])]),
+      ~render=
+        ([i, l]) =>
+          Theia.hSeq([Theia.box(~dx=2., ~dy=2., i, []), Theia.box(~dx=2., ~dy=2., l, [])]),
       (),
     ),
   );
@@ -234,7 +236,9 @@ let vizStoreBinding = ((loc, value): (loc, value)) =>
     ConfigIR.mk(
       ~name="store_binding",
       ~nodes=[vizLoc(loc), vizValue(value)],
-      ~render=([l, v]) => Theia.hSeq([Theia.box(l, []), Theia.box(v, [])]),
+      ~render=
+        ([l, v]) =>
+          Theia.hSeq([Theia.box(~dx=2., ~dy=2., l, []), Theia.box(~dx=2., ~dy=2., v, [])]),
       (),
     ),
   );
@@ -311,23 +315,33 @@ let rec vizOpCtxts = (op_ctxts: op_ctxts) =>
     )
   };
 
+let vizStmtsCtxt = ({pre, post}: stmts_ctxt) =>
+  Some(
+    ConfigIR.mk(
+      ~name="stmts_ctxt",
+      ~nodes=[vizStmts(post |> List.rev), None, vizStmts(pre)],
+      ~render=Theia.vSeq,
+      (),
+    ),
+  );
+
 let vizProgCtxt = (pc: prog_ctxt) =>
   switch (pc) {
   | StmtCtxt(oc) =>
     Some(
       ConfigIR.mk(
-        ~name="prog_ctxt",
+        ~name="prog_ctxt.StmtCtxt",
         ~nodes=[vizOpCtxt(oc)],
         ~render=([oc]) => Theia.noOp(oc, []),
         (),
       ),
     )
-  | StmtsCtxt({pre, post}) =>
+  | StmtsCtxt(sc) =>
     Some(
       ConfigIR.mk(
-        ~name="prog_ctxt",
-        ~nodes=[vizStmts(pre), None, vizStmts(post)],
-        ~render=Theia.vSeq,
+        ~name="prog_ctxt.StmtsCtxt",
+        ~nodes=[vizStmtsCtxt(sc)],
+        ~render=([sc]) => Theia.noOp(sc, []),
         (),
       ),
     )

@@ -162,6 +162,53 @@ let rec transformWorkspaceZipperOption = on =>
 
 let transformWorkspaceZipper = n => transformWorkspaceZipperOption(Some(n))->Belt.Option.getExn;
 
+let rec prog_ctxtsToList = ({name, nodes} as prog_ctxts) =>
+  if (name == "prog_ctxts_empty") {
+    [];
+  } else if (name == "prog_ctxts_cons") {
+    let [Some(prog_ctxt), Some(prog_ctxts)] = nodes;
+    [Some(prog_ctxt), ...prog_ctxtsToList(prog_ctxts)];
+  } else {
+    Js.log2("expected prog_ctxts_empty or prog_ctxts_cons. found", name);
+    assert(false);
+  };
+
+let rec transformProgCtxtOption = on =>
+  switch (on) {
+  | None => None
+  | Some(n) =>
+    let {name, nodes} as n = {...n, nodes: List.map(transformProgCtxtOption, n.nodes)};
+    let n =
+      if (Js.String.startsWith("prog_ctxt.", name)) {
+        List.hd(nodes);
+      } else {
+        Some(n);
+      };
+    n;
+  };
+
+let transformProgCtxt = n => transformProgCtxtOption(Some(n))->Belt.Option.getExn;
+
+let rec transformProgramZipperOption = on =>
+  switch (on) {
+  | None => None
+  | Some(n) =>
+    let {name, nodes} as n = {...n, nodes: List.map(transformProgramZipperOption, n.nodes)};
+    if (name == "programZipper") {
+      // Js.log2("programZipper nodes", nodes |> Array.of_list);
+      let [f, Some(prog_ctxts)] = nodes;
+      /* TODO: list converter probably wrong b/c there is a level of indirection */
+      let prog_ctxts = prog_ctxtsToList(prog_ctxts);
+      Js.log2("f", f);
+      Js.log2("prog_ctxts", prog_ctxts |> Array.of_list);
+      zipUp(f, prog_ctxts);
+    } else {
+      Some(n);
+    };
+  };
+
+let transformProgramZipper = n => transformProgramZipperOption(Some(n))->Belt.Option.getExn;
+
 // let rec transformContinuationOption = on =>
 //   switch (on) {
 //   | None => None

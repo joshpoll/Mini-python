@@ -153,3 +153,19 @@ ReactDOMRe.render(
   />,
   makeContainer("var"),
 );
+
+/* mini python tutor example */
+ReactDOMRe.render(
+  <VizTrace
+    program=MiniPython.{
+      stmts: [
+        {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(1)]},
+        {op: Stmt(AssignStmt("y")), args: [IntegerLiteral(4)]},
+        {op: Stmt(AssignStmt("z")), args: [Identifier("y")]},
+        {op: Stmt(AssignStmt("y")), args: [Identifier("x")]},
+        {op: Stmt(AssignStmt("x")), args: [Identifier("z")]},
+      ],
+    }
+  />,
+  makeContainer("var"),
+);
