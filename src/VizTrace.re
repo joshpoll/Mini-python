@@ -5,6 +5,7 @@ type state = {
   renderedNodes: list(React.element),
   pos: int,
   length: int,
+  pointers: bool,
 };
 
 type action =
@@ -12,9 +13,15 @@ type action =
   | Decrement
   | Length(int)
   | SetNodes(list(React.element))
+  | TogglePointers
   | Error;
 
-let initialState = {renderedNodes: [<g> {React.string("Loading...")} </g>], pos: 0, length: 1};
+let initialState = {
+  renderedNodes: [<g> {React.string("Loading...")} </g>],
+  pos: 0,
+  length: 1,
+  pointers: false,
+};
 
 let reducer = (state, action) => {
   switch (action) {
@@ -22,6 +29,7 @@ let reducer = (state, action) => {
   | Decrement => {...state, pos: max(0, state.pos - 1)}
   | Length(length) => {...state, length}
   | SetNodes(renderedNodes) => {...state, renderedNodes}
+  | TogglePointers => {...state, pointers: !state.pointers}
   | Error => state
   };
 };
@@ -35,7 +43,7 @@ let toggle = (Animation.{curr: _, next}) =>
   | After => {curr: next, next: Before}
   };
 
-let transform = n =>
+let transform = (~pointers=false, n) =>
   n
   |> MiniPythonTransform.transformOpExpr
   |> MiniPythonTransform.transformOpCtxt
@@ -43,7 +51,13 @@ let transform = n =>
   |> MiniPythonTransform.transformWorkspaceZipper
   |> MiniPythonTransform.transformProgCtxt
   |> MiniPythonTransform.transformProgramZipper
-  |> MiniPythonTransform.transformRefs;
+  |> (
+    if (pointers) {
+      MiniPythonTransform.transformRefs;
+    } else {
+      x => x;
+    }
+  );
 
 // |> ZEDTransform.transformContinuation;
 
@@ -56,40 +70,43 @@ let make = (~continuity=true, ~padding=10., ~program) => {
 
   // Notice that instead of `useEffect`, we have `useEffect0`. See
   // reasonml.github.io/reason-react/docs/en/components#hooks for more info
-  React.useEffect0(() => {
-    dispatch(Length(List.length(nodes)));
+  React.useEffect1(
+    () => {
+      dispatch(Length(List.length(nodes)));
 
-    let nodes: list(Sidewinder.ConfigGraphIR.node) =
-      nodes
-      |> List.map(MiniPythonViz.vizConfig)
-      |> List.map(Sidewinder.ToConfigGraph.lower)
-      |> List.map(Sidewinder.PropagatePlace.convert(Sidewinder.Flow.none))
-      |> List.map(((_, n)) => n)
-      |> List.map(transform);
+      let nodes: list(Sidewinder.ConfigGraphIR.node) =
+        nodes
+        |> List.map(MiniPythonViz.vizConfig)
+        |> List.map(Sidewinder.ToConfigGraph.lower)
+        |> List.map(Sidewinder.PropagatePlace.convert(Sidewinder.Flow.none))
+        |> List.map(((_, n)) => n)
+        |> List.map(transform(~pointers=state.pointers));
 
-    let finalNode = nodes |> List.rev |> List.hd;
-    let finalState =
-      Sidewinder.Config.compileTransition(finalNode, Sidewinder.Flow.none, finalNode);
+      let finalNode = nodes |> List.rev |> List.hd;
+      let finalState =
+        Sidewinder.Config.compileTransition(finalNode, Sidewinder.Flow.none, finalNode);
 
-    dispatch(
-      SetNodes(
-        Bobcat.Fn.mapPairs(
-          (n1, n2) => Sidewinder.Config.compileTransition(n1, Sidewinder.Flow.none, n2),
-          nodes,
-        )
-        @ [finalState],
-      ),
-    );
+      dispatch(
+        SetNodes(
+          Bobcat.Fn.mapPairs(
+            (n1, n2) => Sidewinder.Config.compileTransition(n1, Sidewinder.Flow.none, n2),
+            nodes,
+          )
+          @ [finalState],
+        ),
+      );
 
-    // Returning None, instead of Some(() => ...), means we don't have any
-    // cleanup to do before unmounting. That's not 100% true. We should
-    // technically cancel the promise. Unofortunately, there's currently no
-    // way to cancel a promise. Promises in general should be way less used
-    // for React components; but since folks do use them, we provide such an
-    // example here. In reality, this fetch should just be a plain callback,
-    // with a cancellation API
-    None;
-  });
+      // Returning None, instead of Some(() => ...), means we don't have any
+      // cleanup to do before unmounting. That's not 100% true. We should
+      // technically cancel the promise. Unofortunately, there's currently no
+      // way to cancel a promise. Promises in general should be way less used
+      // for React components; but since folks do use them, we provide such an
+      // example here. In reality, this fetch should just be a plain callback,
+      // with a cancellation API
+      None;
+    },
+    [|state.pointers|],
+  );
 
   let renderedConfig = List.nth(state.renderedNodes, state.pos);
   let width = 1000.;
@@ -121,6 +138,13 @@ let make = (~continuity=true, ~padding=10., ~program) => {
         setAnimationState(_ => Animation.initValue);
       }}>
       {React.string("->")}
+    </button>
+    <button onClick={_event => {dispatch(TogglePointers)}}>
+      {if (state.pointers) {
+         React.string("use pointer ids");
+       } else {
+         React.string("use reference arrows");
+       }}
     </button>
     <br />
     <br />

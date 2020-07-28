@@ -259,8 +259,8 @@ let getDstRefUIDs = n => {
   let locUIDMap =
     List.map(
       (Some({nodes})) => {
-        let Some(loc) = List.hd(nodes);
-        (loc.name |> Js.String.sliceToEnd(~from=4), loc.uid);
+        let [Some(loc), Some(value)] = nodes;
+        (loc.name |> Js.String.sliceToEnd(~from=4), value.uid);
       },
       store,
     );
@@ -269,9 +269,11 @@ let getDstRefUIDs = n => {
 
 let rec addEnvLinks = (locUIDMap, {name, nodes} as env) =>
   if (name == "env_empty") {
-    env;
+    (env, []);
   } else if (name == "env_bind") {
     let [Some(binding), Some(env')] = nodes;
+    let (env', links) = addEnvLinks(locUIDMap, env');
+    Js.log2("env'", env');
 
     let Some(loc) = List.nth(binding.nodes, 1);
     let lookup =
@@ -312,11 +314,42 @@ let rec addEnvLinks = (locUIDMap, {name, nodes} as env) =>
               ),
           }),
         ],
-        links: [link],
+        // links: [link],
       }),
-      Some(addEnvLinks(locUIDMap, env')),
+      Some(env'),
     ];
-    {...env, nodes};
+    ({...env, nodes}, [link, ...links]);
+  } else {
+    Js.log2("expected env_empty or env_bind. found", name);
+    assert(false);
+  };
+
+let rec hideStoreLocs = ({name, nodes} as store) =>
+  if (name == "store_empty") {
+    store;
+  } else if (name == "store_bind") {
+    let [Some(binding), Some(store')] = nodes;
+    let Some(loc) = List.hd(binding.nodes);
+    /* hide loc in binding */
+    let nodes = [
+      Some({
+        ...binding,
+        nodes: [
+          Some({
+            ...loc,
+            render: _ =>
+              Bobcat.Theia.atom(
+                React.null,
+                Bobcat.Rectangle.fromCenterPointSize(~cx=0., ~cy=0., ~width=0., ~height=0.),
+              ),
+          }),
+          List.nth(binding.nodes, 1),
+        ],
+        render: ([_l, v]) => Bobcat.Theia.hSeq([Bobcat.Theia.box(~dx=2., ~dy=2., v, [])]),
+      }),
+      Some(hideStoreLocs(store')),
+    ];
+    {...store, nodes};
   } else {
     Js.log2("expected env_empty or env_bind. found", name);
     assert(false);
@@ -331,8 +364,14 @@ let transformRefs = n => {
         if (i == 2) {
           /* env */
           let Some(env) = n;
-          let env = addEnvLinks(locUIDMap, env);
+          let (env, links) = addEnvLinks(locUIDMap, env);
+          let env = {...env, links};
+          Js.log2("env", env);
           Some(env);
+        } else if (i == 3) {
+          let Some(store) = n;
+          let store = hideStoreLocs(store);
+          Some(store);
         } else {
           n;
         },

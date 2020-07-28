@@ -10,7 +10,7 @@ let vizLoc = (loc: loc) =>
     ConfigIR.mk(
       ~name="loc_" ++ string_of_int(loc),
       ~nodes=[],
-      ~render=_ => Theia.str(string_of_int(loc)),
+      ~render=_ => Theia.str("id" ++ string_of_int(loc)),
       (),
     ),
   );
@@ -453,22 +453,57 @@ let vizProgramFocus = (pf: programFocus) =>
     )
   };
 
+let vizWorkspaceZipperHeader = () =>
+  Some(
+    ConfigIR.mk(
+      ~name="workspaceZipperHeader",
+      ~nodes=[],
+      ~render=_ => Theia.str("workspace"),
+      (),
+    ),
+  );
+
 let vizWorkspaceZipper = ({workspaceFocus, op_ctxts}: workspaceZipper) =>
   Some(
     ConfigIR.mk(
-      ~name="workspaceZipper",
-      ~nodes=[vizWorkspaceFocus(workspaceFocus), vizOpCtxts(op_ctxts)],
-      ~render=Theia.hSeq,
+      ~name="workspaceZipperContainer",
+      ~nodes=[
+        vizWorkspaceZipperHeader(),
+        Some(
+          ConfigIR.mk(
+            ~name="workspaceZipper",
+            ~nodes=[vizWorkspaceFocus(workspaceFocus), vizOpCtxts(op_ctxts)],
+            ~render=Theia.hSeq,
+            (),
+          ),
+        ),
+      ],
+      ~render=([h, p]) => Theia.vSeq(~gap=5., [h, Theia.box(~dx=10., ~dy=10., p, [])]),
       (),
     ),
+  );
+
+let vizProgramZipperHeader = () =>
+  Some(
+    ConfigIR.mk(~name="programZipperHeader", ~nodes=[], ~render=_ => Theia.str("program"), ()),
   );
 
 let vizProgramZipper = ({programFocus, prog_ctxts}: programZipper) =>
   Some(
     ConfigIR.mk(
-      ~name="programZipper",
-      ~nodes=[vizProgramFocus(programFocus), vizProgCtxts(prog_ctxts)],
-      ~render=Theia.hSeq,
+      ~name="programZipperContainer",
+      ~nodes=[
+        vizProgramZipperHeader(),
+        Some(
+          ConfigIR.mk(
+            ~name="programZipper",
+            ~nodes=[vizProgramFocus(programFocus), vizProgCtxts(prog_ctxts)],
+            ~render=Theia.hSeq,
+            (),
+          ),
+        ),
+      ],
+      ~render=([h, p]) => Theia.vSeq(~gap=5., [h, Theia.box(~dx=10., ~dy=10., p, [])]),
       (),
     ),
   );
@@ -482,11 +517,6 @@ let vizConfig = ({programZipper, workspaceZipper, env, store, glob}: config) =>
       vizEnv(env),
       vizStore(store),
     ],
-    ~render=
-      ([pz, wz, e, s]) =>
-        Theia.hSeq(
-          ~gap=20.,
-          [Theia.box(~dx=10., ~dy=10., pz, []), Theia.box(~dx=10., ~dy=10., wz, []), e, s],
-        ),
+    ~render=([pz, wz, e, s]) => Theia.hSeq(~gap=20., [pz, wz, e, s]),
     (),
   );

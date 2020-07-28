@@ -62,97 +62,97 @@ let makeContainer = text => {
 //   makeContainer("Lift(Bracket(Lift(ae)))"),
 // );
 
-/* ENONE */
-ReactDOMRe.render(
-  <VizTrace program={MiniPython.liftExpr(MiniPython.NoneLiteral)} />,
-  makeContainer("NoneLiteral"),
-);
+// /* ENONE */
+// ReactDOMRe.render(
+//   <VizTrace program={MiniPython.liftExpr(MiniPython.NoneLiteral)} />,
+//   makeContainer("NoneLiteral"),
+// );
 
-/* BOOL-FALSE */
-ReactDOMRe.render(
-  <VizTrace program={MiniPython.liftExpr(MiniPython.BooleanLiteral(false))} />,
-  makeContainer("False"),
-);
+// /* BOOL-FALSE */
+// ReactDOMRe.render(
+//   <VizTrace program={MiniPython.liftExpr(MiniPython.BooleanLiteral(false))} />,
+//   makeContainer("False"),
+// );
 
-/* BOOL-TRUE */
-ReactDOMRe.render(
-  <VizTrace program={MiniPython.liftExpr(MiniPython.BooleanLiteral(true))} />,
-  makeContainer("True"),
-);
+// /* BOOL-TRUE */
+// ReactDOMRe.render(
+//   <VizTrace program={MiniPython.liftExpr(MiniPython.BooleanLiteral(true))} />,
+//   makeContainer("True"),
+// );
 
-/* INT */
-ReactDOMRe.render(
-  <VizTrace program={MiniPython.liftExpr(MiniPython.IntegerLiteral(5))} />,
-  makeContainer("IntegerLiteral"),
-);
+// /* INT */
+// ReactDOMRe.render(
+//   <VizTrace program={MiniPython.liftExpr(MiniPython.IntegerLiteral(5))} />,
+//   makeContainer("IntegerLiteral"),
+// );
 
-/* STR */
-ReactDOMRe.render(
-  <VizTrace program={MiniPython.liftExpr(MiniPython.StringLiteral("Hello"))} />,
-  makeContainer("StringLiteral"),
-);
+// /* STR */
+// ReactDOMRe.render(
+//   <VizTrace program={MiniPython.liftExpr(MiniPython.StringLiteral("Hello"))} />,
+//   makeContainer("StringLiteral"),
+// );
 
-/* NEG */
-ReactDOMRe.render(
-  <VizTrace
-    program={MiniPython.liftExpr(
-      MiniPython.UnaryExpr({op: Unary(Neg), args: [IntegerLiteral(1)]}),
-    )}
-  />,
-  makeContainer("NEG"),
-);
+// /* NEG */
+// ReactDOMRe.render(
+//   <VizTrace
+//     program={MiniPython.liftExpr(
+//       MiniPython.UnaryExpr({op: Unary(Neg), args: [IntegerLiteral(1)]}),
+//     )}
+//   />,
+//   makeContainer("NEG"),
+// );
 
-/* ARITH: + */
-ReactDOMRe.render(
-  <VizTrace
-    program={MiniPython.liftExpr(
-      MiniPython.BinaryExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(2)]}),
-    )}
-  />,
-  makeContainer("ARITH: +"),
-);
+// /* ARITH: + */
+// ReactDOMRe.render(
+//   <VizTrace
+//     program={MiniPython.liftExpr(
+//       MiniPython.BinaryExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(2)]}),
+//     )}
+//   />,
+//   makeContainer("ARITH: +"),
+// );
 
-/* multiple statements */
-ReactDOMRe.render(
-  <VizTrace
-    program=MiniPython.{
-      stmts: [
-        {
-          op: Stmt(ExprStmt),
-          args: [UnaryExpr({op: Unary(Neg), args: [IntegerLiteral(1)]})],
-        },
-        {
-          op: Stmt(ExprStmt),
-          args: [
-            BinaryExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(2)]}),
-          ],
-        },
-      ],
-    }
-  />,
-  makeContainer("multiple statements"),
-);
+// /* multiple statements */
+// ReactDOMRe.render(
+//   <VizTrace
+//     program=MiniPython.{
+//       stmts: [
+//         {
+//           op: Stmt(ExprStmt),
+//           args: [UnaryExpr({op: Unary(Neg), args: [IntegerLiteral(1)]})],
+//         },
+//         {
+//           op: Stmt(ExprStmt),
+//           args: [
+//             BinaryExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(2)]}),
+//           ],
+//         },
+//       ],
+//     }
+//   />,
+//   makeContainer("multiple statements"),
+// );
 
-/* PASS */
-ReactDOMRe.render(
-  <VizTrace program=MiniPython.{stmts: [{op: Stmt(Pass), args: []}]} />,
-  makeContainer("PASS"),
-);
+// /* PASS */
+// ReactDOMRe.render(
+//   <VizTrace program=MiniPython.{stmts: [{op: Stmt(Pass), args: []}]} />,
+//   makeContainer("PASS"),
+// );
 
-/* VAR-INIT, VAR-READ, VAR-ASSIGN-STMT */
-ReactDOMRe.render(
-  <VizTrace
-    program=MiniPython.{
-      stmts: [
-        {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(5)]},
-        {op: Stmt(ExprStmt), args: [Identifier("x")]},
-        {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(6)]},
-        {op: Stmt(ExprStmt), args: [Identifier("x")]},
-      ],
-    }
-  />,
-  makeContainer("var"),
-);
+// /* VAR-INIT, VAR-READ, VAR-ASSIGN-STMT */
+// ReactDOMRe.render(
+//   <VizTrace
+//     program=MiniPython.{
+//       stmts: [
+//         {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(5)]},
+//         {op: Stmt(ExprStmt), args: [Identifier("x")]},
+//         {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(6)]},
+//         {op: Stmt(ExprStmt), args: [Identifier("x")]},
+//       ],
+//     }
+//   />,
+//   makeContainer("var"),
+// );
 
 /* mini python tutor example */
 ReactDOMRe.render(
@@ -160,12 +160,17 @@ ReactDOMRe.render(
     program=MiniPython.{
       stmts: [
         {op: Stmt(AssignStmt("x")), args: [IntegerLiteral(1)]},
-        {op: Stmt(AssignStmt("y")), args: [IntegerLiteral(4)]},
+        {
+          op: Stmt(AssignStmt("y")),
+          args: [
+            BinaryExpr({op: Binary(Add), args: [IntegerLiteral(1), IntegerLiteral(3)]}),
+          ],
+        },
         {op: Stmt(AssignStmt("z")), args: [Identifier("y")]},
         {op: Stmt(AssignStmt("y")), args: [Identifier("x")]},
         {op: Stmt(AssignStmt("x")), args: [Identifier("z")]},
       ],
     }
   />,
-  makeContainer("var"),
+  makeContainer("Demo"),
 );
