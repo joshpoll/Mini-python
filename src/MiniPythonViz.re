@@ -6,7 +6,14 @@ let vizId = (id: id) =>
   Some(ConfigIR.mk(~name="id", ~nodes=[], ~render=_ => Theia.str(id), ()));
 
 let vizLoc = (loc: loc) =>
-  Some(ConfigIR.mk(~name="loc", ~nodes=[], ~render=_ => Theia.str(string_of_int(loc)), ()));
+  Some(
+    ConfigIR.mk(
+      ~name="loc_" ++ string_of_int(loc),
+      ~nodes=[],
+      ~render=_ => Theia.str(string_of_int(loc)),
+      (),
+    ),
+  );
 
 let vizUnaryOp = (uo: unary_op) =>
   switch (uo) {

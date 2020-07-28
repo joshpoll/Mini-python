@@ -42,7 +42,8 @@ let transform = n =>
   |> MiniPythonTransform.transformOpPreval
   |> MiniPythonTransform.transformWorkspaceZipper
   |> MiniPythonTransform.transformProgCtxt
-  |> MiniPythonTransform.transformProgramZipper;
+  |> MiniPythonTransform.transformProgramZipper
+  |> MiniPythonTransform.transformRefs;
 
 // |> ZEDTransform.transformContinuation;
 
@@ -127,17 +128,28 @@ let make = (~continuity=true, ~padding=10., ~program) => {
       xmlns="http://www.w3.org/2000/svg"
       width={Js.Float.toString(width +. padding *. 2.)}
       height={Js.Float.toString(height +. padding *. 2.)}>
-      <g
-        transform={
-          "translate("
-          ++ Js.Float.toString(xOffset +. padding)
-          ++ ", "
-          ++ Js.Float.toString(yOffset +. padding)
-          ++ ")"
-        }>
-        <AnimationProvider value=Animation.{curr, next}> renderedConfig </AnimationProvider>
-      </g>
-    </svg>
+      /* arrowhead styling */
+
+        <defs>
+          <marker
+            id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+            <polygon
+              points="0 0, 10 3.5, 0 7"
+              style={ReactDOMRe.Style.make(~fill="#85C1E9", ())}
+            />
+          </marker>
+        </defs>
+        <g
+          transform={
+            "translate("
+            ++ Js.Float.toString(xOffset +. padding)
+            ++ ", "
+            ++ Js.Float.toString(yOffset +. padding)
+            ++ ")"
+          }>
+          <AnimationProvider value=Animation.{curr, next}> renderedConfig </AnimationProvider>
+        </g>
+      </svg>
   </div>;
   // };
   /* ->Belt.Array.mapWithIndex((i, dog) => {

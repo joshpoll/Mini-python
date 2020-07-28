@@ -138,6 +138,7 @@ let rec zipUp =
             /* ~place?, */
             ~name="highlight",
             ~nodes=[f],
+            ~links=[],
             ~render=([f]) => Bobcat.Theia.highlight(~fill="hsla(240, 100%, 80%, 33%)", f, []),
             (),
           ),
@@ -208,6 +209,142 @@ let rec transformProgramZipperOption = on =>
   };
 
 let transformProgramZipper = n => transformProgramZipperOption(Some(n))->Belt.Option.getExn;
+
+let rec storeToList = ({name, nodes} as store) =>
+  if (name == "store_empty") {
+    [];
+  } else if (name == "store_bind") {
+    let [Some(binding), Some(store)] = nodes;
+    [Some(binding), ...storeToList(store)];
+  } else {
+    Js.log2("expected store_empty or store_bind. found", name);
+    assert(false);
+  };
+
+let rec envToList = ({name, nodes} as env) =>
+  if (name == "env_empty") {
+    [];
+  } else if (name == "env_bind") {
+    let [Some(binding), Some(env)] = nodes;
+    [Some(binding), ...envToList(env)];
+  } else {
+    Js.log2("expected env_empty or env_bind. found", name);
+    assert(false);
+  };
+
+let rec envFromList =
+        (env: list(option(Sidewinder.ConfigGraphIR.node))): Sidewinder.ConfigGraphIR.node =>
+  switch (env) {
+  | [] =>
+    Sidewinder.ConfigGraphIR.mk(
+      ~name="env_empty",
+      ~nodes=[],
+      ~links=[],
+      ~render=_ => Bobcat.Theia.str("env"),
+      (),
+    )
+  | [binding, ...env] =>
+    Sidewinder.ConfigGraphIR.mk(
+      ~name="env_bind",
+      ~nodes=[binding, Some(envFromList(env))],
+      ~links=[],
+      ~render=([b, env]) => Bobcat.Theia.vSeq([env, b]),
+      (),
+    )
+  };
+
+let getDstRefUIDs = n => {
+  let Some(store) = List.nth(n.nodes, 3);
+  let store = storeToList(store);
+  let locUIDMap =
+    List.map(
+      (Some({nodes})) => {
+        let Some(loc) = List.hd(nodes);
+        (loc.name |> Js.String.sliceToEnd(~from=4), loc.uid);
+      },
+      store,
+    );
+  locUIDMap;
+};
+
+let rec addEnvLinks = (locUIDMap, {name, nodes} as env) =>
+  if (name == "env_empty") {
+    env;
+  } else if (name == "env_bind") {
+    let [Some(binding), Some(env')] = nodes;
+
+    let Some(loc) = List.nth(binding.nodes, 1);
+    let lookup =
+      locUIDMap
+      ->Belt.List.getAssoc(loc.name |> Js.String.sliceToEnd(~from=4), (==))
+      ->Belt.Option.getExn;
+    /* compute the link */
+    let link =
+      Bobcat.Link.{
+        source: loc.uid,
+        target: lookup,
+        linkRender:
+          Some(
+            (~source, ~target) => {
+              <line
+                x1={Js.Float.toString(source->Bobcat.Rectangle.cx)}
+                y1={Js.Float.toString(source->Bobcat.Rectangle.cy)}
+                x2={Js.Float.toString(target->Bobcat.Rectangle.x1 -. 12.)}
+                y2={Js.Float.toString(target->Bobcat.Rectangle.cy)}
+                stroke="#85C1E9"
+                markerEnd="url(#arrowhead)"
+              />
+            },
+          ),
+      };
+    /* add the link to the binding */
+    let nodes = [
+      Some({
+        ...binding,
+        nodes: [
+          List.hd(binding.nodes),
+          Some({
+            ...loc,
+            render: _ =>
+              Bobcat.Theia.atom(
+                <circle cx="0" cy="0" r="2" stroke="#85C1E9" fill="#85C1E9" />,
+                Bobcat.Rectangle.fromCenterPointSize(~cx=0., ~cy=0., ~width=5., ~height=5.),
+              ),
+          }),
+        ],
+        links: [link],
+      }),
+      Some(addEnvLinks(locUIDMap, env')),
+    ];
+    {...env, nodes};
+  } else {
+    Js.log2("expected env_empty or env_bind. found", name);
+    assert(false);
+  };
+
+let transformRefs = n => {
+  let locUIDMap = getDstRefUIDs(n);
+  Js.log2("locUIDMap", locUIDMap |> Array.of_list);
+  let nodes =
+    List.mapi(
+      (i, n) =>
+        if (i == 2) {
+          /* env */
+          let Some(env) = n;
+          let env = addEnvLinks(locUIDMap, env);
+          Some(env);
+        } else {
+          n;
+        },
+      n.nodes,
+    );
+  // first getDstRefUIDs. This should be a map from a loc to a UID.
+  // then go through source UIDs and add links to them by looking up their loc in the map.
+  //
+  // after that part works, we should see links superimposed on the existing visualization, so next
+  // we want to rewrite it so that things we no longer care about are hidden.
+  {...n, nodes};
+};
 
 // let rec transformContinuationOption = on =>
 //   switch (on) {
